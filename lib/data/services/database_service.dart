@@ -31,6 +31,7 @@ class DatabaseService {
     final auth = [
       '-h', host, '-P', '$port', '-u', user,
       if (password.isNotEmpty) '-p$password',
+      '--max_allowed_packet=1G', // handle large tables/rows
     ];
 
     // Ensure the target database exists.

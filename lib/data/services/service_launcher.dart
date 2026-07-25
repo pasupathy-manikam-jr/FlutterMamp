@@ -66,6 +66,7 @@ class ServiceLauncher {
             '--bind-address=127.0.0.1',
             '--socket=$dataDir/mysql.sock',
             '--mysqlx=OFF',
+            '--max_allowed_packet=1G',
           ],
         );
     }
