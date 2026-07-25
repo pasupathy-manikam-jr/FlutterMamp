@@ -3,12 +3,12 @@
 /// Binaries live in the app's own `runtime/bin` directory (bundled/downloaded),
 /// never `/Applications/MAMP`.
 enum ServiceType {
-  mysql('MySQL', 3306, 'Database server', 'mariadbd'),
-  redis('Redis', 6379, 'In-memory data store', 'redis-server'),
-  memcached('Memcached', 11211, 'Memory object cache', 'memcached'),
-  mailhog('MailHog', 8025, 'Email testing (SMTP capture)', 'mailhog');
+  mysql('MySQL', 3306, 'Database server', 'mysql/bin/mysqld'),
+  redis('Redis', 6379, 'In-memory data store', 'bin/redis-server'),
+  memcached('Memcached', 11211, 'Memory object cache', 'bin/memcached'),
+  mailhog('MailHog', 8025, 'Email testing (SMTP capture)', 'bin/mailhog');
 
-  const ServiceType(this.label, this.defaultPort, this.blurb, this.binaryName);
+  const ServiceType(this.label, this.defaultPort, this.blurb, this.relativePath);
 
   /// Human-friendly name.
   final String label;
@@ -19,6 +19,7 @@ enum ServiceType {
   /// One-line description.
   final String blurb;
 
-  /// Expected executable name inside the runtime `bin` directory.
-  final String binaryName;
+  /// Path to the executable relative to the runtime root (some services, like
+  /// MySQL, ship with their own basedir tree rather than a single binary).
+  final String relativePath;
 }

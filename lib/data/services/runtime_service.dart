@@ -15,12 +15,24 @@ class RuntimeService {
 
   final String _home;
 
-  String get root => '$_home/Library/Application Support/FlutterMamp/runtime';
+  // A space-free path: several bundled tools are built with autotools/make,
+  // which mishandle spaces (as in "Application Support"). Runtime data that is
+  // only *used* at run time (datadirs) can still live under Application Support.
+  String get root => '$_home/.fluttermamp/runtime';
   String get binDir => '$root/bin';
 
   /// Absolute path to the service's binary, or null if not installed yet.
   String? binaryFor(ServiceType type) {
-    final path = '$binDir/${type.binaryName}';
+    final path = '$root/${type.relativePath}';
     return File(path).existsSync() ? path : null;
+  }
+
+  /// The directory holding [type]'s install tree (its basedir), e.g. the MySQL
+  /// distribution root. Derived from the binary's relative path.
+  String baseDirFor(ServiceType type) {
+    // relativePath like "mysql/bin/mysqld" → basedir "<root>/mysql".
+    final parts = type.relativePath.split('/');
+    if (parts.length >= 3) return '$root/${parts.first}';
+    return root;
   }
 }

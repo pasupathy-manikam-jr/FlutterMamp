@@ -50,10 +50,25 @@ class ServiceLauncher {
           ],
         );
       case ServiceType.mysql:
-        // MySQL/MariaDB needs an initialised data directory; wiring that up is
-        // the next milestone. Until then it surfaces as an error if launched.
-        throw StateError(
-            'MySQL/MariaDB launch is not wired up yet (needs datadir init).');
+        // Binary lives at <runtime>/mysql/bin/mysqld → basedir is <runtime>/mysql.
+        final base = File(binaryPath).parent.parent.path;
+        final dir = '$dataDir/mysql';
+        if (!Directory('$dir/mysql').existsSync()) {
+          throw StateError(
+              'MySQL data directory is not initialised at $dir.');
+        }
+        return LaunchSpec(
+          executable: binaryPath,
+          arguments: [
+            '--no-defaults',
+            '--basedir=$base',
+            '--datadir=$dir',
+            '--port=${service.port}',
+            '--bind-address=127.0.0.1',
+            '--socket=$dataDir/mysql.sock',
+            '--mysqlx=OFF',
+          ],
+        );
     }
   }
 }

@@ -310,7 +310,14 @@ lib/
 ### M8 — Independence from MAMP (new, in progress)
 - [x] `runtime/` dir + `RuntimeService`; bundle Redis (built) + MailHog (downloaded).
 - [x] Global Services feature (Redis/Memcached/MailHog start-stop, MySQL stub).
-- [ ] Bundle MariaDB/MySQL + datadir init; wire MySQL start/stop.
-- [ ] Bundle Memcached binary (currently discovered only if present).
-- [ ] Source own Apache/Nginx/PHP (build/bundle) to drop MAMP for sites.
+- [x] Bundle **MySQL 8.4.6** (own arm64 tarball) + init datadir; wire start/stop.
+      Smoke-tested: boots, accepts connections.
+- [x] Bundle **Memcached 1.6.38** (+ libevent) built from source.
+- [x] Bundle **Nginx 1.27.4** (+ pcre2) built from source.
+- [x] **Runtime lives at `~/.fluttermamp/runtime`** (space-free) — "Application
+      Support" breaks autotools/make; runtime datadirs may still live there.
+- [ ] Wire Sites to use our own **Nginx + PHP** (drop MAMP for nginx sites).
+- [ ] Source own **PHP** (static build) and **Apache** (hardest — APR toolchain).
+- [ ] Data migration: cp4's DB currently lives in MAMP's MySQL; our MySQL is a
+      fresh empty instance (dump/import needed to fully switch).
 - [ ] In-app "download runtime" so a fresh install fetches its own binaries.
