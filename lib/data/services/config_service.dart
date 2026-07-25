@@ -63,6 +63,20 @@ class ConfigService {
   /// FastCGI port derived from the site's HTTP port (kept internal).
   int _fcgiPort(Site site) => 40000 + (site.port % 20000);
 
+  /// Ensure a TLS cert exists for [site] and return its path (null if OpenSSL
+  /// is unavailable). Used by the "Trust Certificate" action.
+  Future<String?> ensureCert(Site site, MampEnvironment env) async {
+    final openssl = env.opensslBinary;
+    if (openssl == null) return null;
+    await _ensureDirs();
+    final cert = await _certService.ensureCert(
+      commonName: site.host,
+      opensslPath: openssl,
+      outDir: certsDir,
+    );
+    return cert.certPath;
+  }
+
   /// Resolve the launch for [site], writing any config it needs.
   Future<SiteLaunch> prepare(Site site, MampEnvironment env) async {
     await _ensureDirs();

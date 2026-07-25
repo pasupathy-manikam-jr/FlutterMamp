@@ -34,5 +34,18 @@ class SystemService {
         ? path.substring(0, path.length - 1)
         : path;
   }
+
+  /// Add [certPath] to the System keychain as a trusted root so browsers accept
+  /// the self-signed certificate (the "green padlock"). Requires admin, so it
+  /// goes through the native `osascript … with administrator privileges` prompt.
+  /// Returns true on success (or if the user completes the prompt).
+  Future<bool> trustCertificate(String certPath) async {
+    final script = 'do shell script '
+        '"security add-trusted-cert -d -r trustRoot '
+        "-k /Library/Keychains/System.keychain '$certPath'\" "
+        'with administrator privileges';
+    final result = await Process.run('osascript', ['-e', script]);
+    return result.exitCode == 0;
+  }
 }
 

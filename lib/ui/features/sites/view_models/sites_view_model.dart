@@ -143,6 +143,10 @@ class SitesViewModel extends ChangeNotifier {
   /// Show the native folder picker; returns the chosen path or null.
   Future<String?> chooseFolder() => _repository.chooseFolder();
 
+  /// Trust the site's self-signed certificate in the Keychain.
+  Future<bool> trustCertificate(String id) =>
+      _repository.trustCertificate(id);
+
   int suggestPort() => _repository.suggestPort();
 
   @override

@@ -272,6 +272,16 @@ class SiteRepository {
 
   Future<String?> chooseFolder() => _systemService.chooseFolder();
 
+  /// Generate (if needed) and trust the site's TLS certificate in the Keychain.
+  /// Returns false if the site is unknown or OpenSSL is unavailable.
+  Future<bool> trustCertificate(String id) async {
+    final s = site(id);
+    if (s == null) return false;
+    final certPath = await _configService.ensureCert(s, _environment);
+    if (certPath == null) return false;
+    return _systemService.trustCertificate(certPath);
+  }
+
   // --- internals -----------------------------------------------------------
 
   void _appendLog(String id, String line) {

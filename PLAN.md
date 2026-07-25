@@ -289,4 +289,8 @@ lib/
       is a generic FastCGI backend, and mod_proxy_fcgi's default FPM mode caused
       "No input file specified". Verified by reproducing via curl against MAMP's
       httpd + php-cgi (plain SetHandler failed; GENERIC served the real app).
+  - Added **Trust Certificate** action: adds the self-signed cert to the System
+    keychain as a trusted root (`security add-trusted-cert` via admin prompt) for
+    a real green padlock, mirroring MAMP.
+  - Committed & pushed the app to the private repo (no co-author trailer).
   - `flutter analyze`: no issues. Unit tests: pass. App verified running on macOS.

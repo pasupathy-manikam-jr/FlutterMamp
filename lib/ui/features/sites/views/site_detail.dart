@@ -74,6 +74,17 @@ class _SiteDetailState extends State<SiteDetail> {
     }
   }
 
+  Future<void> _trustCert() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await vm.trustCertificate(widget.site.id);
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok
+          ? 'Certificate trusted — restart your browser to see the padlock.'
+          : 'Could not trust the certificate.'),
+    ));
+  }
+
   Future<void> _confirmDelete() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -229,6 +240,18 @@ class _SiteDetailState extends State<SiteDetail> {
               ],
             ],
           ),
+          if (site.sslEnabled)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: OutlinedButton.icon(
+                  onPressed: _trustCert,
+                  icon: const Icon(Icons.verified_user_outlined, size: 18),
+                  label: const Text('Trust Certificate'),
+                ),
+              ),
+            ),
           if (site.status == ServerStatus.error &&
               site.errorMessage != null) ...[
             const SizedBox(height: 12),
