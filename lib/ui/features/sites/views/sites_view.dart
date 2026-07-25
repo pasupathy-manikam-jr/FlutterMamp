@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../services/view_models/services_view_model.dart';
+import '../../services/views/services_section.dart';
 import '../view_models/sites_view_model.dart';
 import 'site_detail.dart';
 import 'site_form_dialog.dart';
@@ -9,14 +11,19 @@ import 'site_tile.dart';
 /// source-list sidebar of sites (with add/remove), and a configuration + log
 /// detail pane.
 class SitesView extends StatelessWidget {
-  const SitesView({super.key, required this.viewModel});
+  const SitesView({
+    super.key,
+    required this.viewModel,
+    required this.servicesViewModel,
+  });
 
   final SitesViewModel viewModel;
+  final ServicesViewModel servicesViewModel;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: viewModel,
+      listenable: Listenable.merge([viewModel, servicesViewModel]),
       builder: (context, _) {
         if (!viewModel.isReady) {
           return const Scaffold(
@@ -30,7 +37,9 @@ class SitesView extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    _Sidebar(viewModel: viewModel),
+                    _Sidebar(
+                        viewModel: viewModel,
+                        servicesViewModel: servicesViewModel),
                     const VerticalDivider(width: 1),
                     Expanded(child: _Detail(viewModel: viewModel)),
                   ],
@@ -115,8 +124,9 @@ class _StatusLight extends StatelessWidget {
 }
 
 class _Sidebar extends StatelessWidget {
-  const _Sidebar({required this.viewModel});
+  const _Sidebar({required this.viewModel, required this.servicesViewModel});
   final SitesViewModel viewModel;
+  final ServicesViewModel servicesViewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +173,8 @@ class _Sidebar extends StatelessWidget {
                     ],
                   ),
           ),
+          const Divider(height: 1),
+          ServicesSection(viewModel: servicesViewModel),
         ],
       ),
     );

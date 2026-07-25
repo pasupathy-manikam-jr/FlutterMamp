@@ -1,0 +1,59 @@
+import 'dart:io';
+
+import '../../domain/models/managed_service.dart';
+import '../../domain/models/service_type.dart';
+import 'config_service.dart' show LaunchSpec;
+
+/// Builds the foreground launch command for a global service, using our own
+/// runtime binaries and writing data/config under the app-support directory.
+class ServiceLauncher {
+  ServiceLauncher({String? homeOverride})
+      : _home = homeOverride ??
+            Platform.environment['HOME'] ??
+            Directory.systemTemp.path;
+
+  final String _home;
+
+  String get _base => '$_home/Library/Application Support/FlutterMamp';
+  String get dataDir => '$_base/data';
+  String get logDir => '$_base/logs';
+
+  /// Resolve the launch command for [service] using [binaryPath].
+  Future<LaunchSpec> prepare(ManagedService service, String binaryPath) async {
+    await Directory(logDir).create(recursive: true);
+    switch (service.type) {
+      case ServiceType.redis:
+        final dir = '$dataDir/redis';
+        await Directory(dir).create(recursive: true);
+        return LaunchSpec(
+          executable: binaryPath,
+          arguments: [
+            '--port', '${service.port}',
+            '--bind', '127.0.0.1',
+            '--daemonize', 'no',
+            '--dir', dir,
+          ],
+        );
+      case ServiceType.memcached:
+        return LaunchSpec(
+          executable: binaryPath,
+          arguments: ['-p', '${service.port}', '-l', '127.0.0.1'],
+        );
+      case ServiceType.mailhog:
+        // UI + API on the service port; SMTP capture on 1025.
+        return LaunchSpec(
+          executable: binaryPath,
+          arguments: [
+            '-ui-bind-addr', '127.0.0.1:${service.port}',
+            '-api-bind-addr', '127.0.0.1:${service.port}',
+            '-smtp-bind-addr', '127.0.0.1:1025',
+          ],
+        );
+      case ServiceType.mysql:
+        // MySQL/MariaDB needs an initialised data directory; wiring that up is
+        // the next milestone. Until then it surfaces as an error if launched.
+        throw StateError(
+            'MySQL/MariaDB launch is not wired up yet (needs datadir init).');
+    }
+  }
+}

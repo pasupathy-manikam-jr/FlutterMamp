@@ -293,4 +293,24 @@ lib/
     keychain as a trusted root (`security add-trusted-cert` via admin prompt) for
     a real green padlock, mirroring MAMP.
   - Committed & pushed the app to the private repo (no co-author trailer).
+  - **Direction change → independence from MAMP.** Goal: FlutterMamp manages its
+    OWN binaries (bundle/download/build) and eventually MAMP PRO is removed.
+    - New `runtime/` dir (`~/Library/Application Support/FlutterMamp/runtime/bin`)
+      holds our own binaries — **Redis 8.8.1** (built from source, arm64) and
+      **MailHog** (downloaded) so far. `RuntimeService` discovers them (never MAMP).
+    - Added global **Services** feature (like MAMP PRO's Server tab): `ServiceType`
+      / `ManagedService`, `ServiceLauncher`, `ServiceRepository`, `ServicesViewModel`,
+      and a **SERVICES** sidebar section (Redis, MySQL, Memcached, MailHog) with
+      inline start/stop. Redis/Memcached/MailHog launchable; MySQL shows until we
+      bundle MariaDB + init a datadir (next).
+    - Sites (Apache/Nginx/PHP) still use MAMP binaries for now — the hard part of
+      independence; migrating to bundled/own binaries is the remaining big work.
   - `flutter analyze`: no issues. Unit tests: pass. App verified running on macOS.
+
+### M8 — Independence from MAMP (new, in progress)
+- [x] `runtime/` dir + `RuntimeService`; bundle Redis (built) + MailHog (downloaded).
+- [x] Global Services feature (Redis/Memcached/MailHog start-stop, MySQL stub).
+- [ ] Bundle MariaDB/MySQL + datadir init; wire MySQL start/stop.
+- [ ] Bundle Memcached binary (currently discovered only if present).
+- [ ] Source own Apache/Nginx/PHP (build/bundle) to drop MAMP for sites.
+- [ ] In-app "download runtime" so a fresh install fetches its own binaries.
