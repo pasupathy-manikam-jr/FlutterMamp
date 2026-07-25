@@ -19,12 +19,13 @@ void main() {
   // Composition root: build the dependency graph once, bottom-up, and inject
   // via constructors (per the Flutter architecture skill — no service locator).
   final processService = ServerProcessService();
+  final runtimeService = RuntimeService();
 
-  // Sites (web servers — currently backed by MAMP binaries; migrating to our
-  // own runtime as we remove MAMP).
+  // Sites: Nginx sites run on our own runtime (nginx + php-fpm); Apache still
+  // uses MAMP for now.
   final siteRepository = SiteRepository(
     mampService: MampService(),
-    configService: ConfigService(),
+    configService: ConfigService(runtimeService: runtimeService),
     processService: processService,
     settingsService: SettingsService(),
     systemService: SystemService(),
@@ -34,7 +35,7 @@ void main() {
 
   // Services (global daemons — our OWN runtime binaries, MAMP-independent).
   final serviceRepository = ServiceRepository(
-    runtimeService: RuntimeService(),
+    runtimeService: runtimeService,
     serviceLauncher: ServiceLauncher(),
     processService: processService,
   );

@@ -35,4 +35,16 @@ class RuntimeService {
     if (parts.length >= 3) return '$root/${parts.first}';
     return root;
   }
+
+  // --- web-server binaries (for MAMP-free Sites) ---
+  String? _exists(String path) => File(path).existsSync() ? path : null;
+
+  /// Our own Nginx binary, or null if not installed.
+  String? get nginxBinary => _exists('$root/nginx/sbin/nginx');
+
+  /// Our own php-fpm binary, or null if not installed.
+  String? get phpFpmBinary => _exists('$root/bin/php-fpm');
+
+  /// Our own PHP CLI binary, or null if not installed.
+  String? get phpCliBinary => _exists('$root/bin/php');
 }

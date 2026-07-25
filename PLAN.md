@@ -316,8 +316,15 @@ lib/
 - [x] Bundle **Nginx 1.27.4** (+ pcre2) built from source.
 - [x] **Runtime lives at `~/.fluttermamp/runtime`** (space-free) — "Application
       Support" breaks autotools/make; runtime datadirs may still live there.
-- [ ] Wire Sites to use our own **Nginx + PHP** (drop MAMP for nginx sites).
-- [ ] Source own **PHP** (static build) and **Apache** (hardest — APR toolchain).
+- [x] Bundle **PHP 8.4.8** (static php-fpm + cli from static-php.dev; has
+      pdo_mysql/redis/mbstring/openssl/curl/gd).
+- [x] **Wire Nginx sites to our own Nginx + php-fpm** — MAMP-free. Smoke-tested:
+      served the real cp4 app end-to-end (843 KB HTML) via bundled nginx+php-fpm.
+- [x] SSL cert generation switched to system `/usr/bin/openssl` (MAMP-free).
+- [ ] **Apache** independence (hardest — APR toolchain). Recommendation: use
+      Nginx for the MAMP-free path; keep Apache on MAMP or defer.
+- [ ] PHP version selection for nginx sites (currently fixed at bundled 8.4.8).
+- [ ] Data migration: cp4's DB lives in MAMP's MySQL; ours is empty.
 - [ ] Data migration: cp4's DB currently lives in MAMP's MySQL; our MySQL is a
       fresh empty instance (dump/import needed to fully switch).
 - [ ] In-app "download runtime" so a fresh install fetches its own binaries.

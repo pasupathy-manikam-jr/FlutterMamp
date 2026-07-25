@@ -4,6 +4,7 @@ import '../../domain/models/mamp_environment.dart';
 import '../../domain/models/server_type.dart';
 import '../../domain/models/site.dart';
 import 'cert_service.dart';
+import 'runtime_service.dart';
 
 /// A fully-resolved command to launch one process in the foreground.
 class LaunchSpec {
@@ -20,33 +21,31 @@ class LaunchSpec {
   final Map<String, String>? environment;
 }
 
-/// An ordered set of processes that together serve a site.
-///
-/// For Apache/Nginx this is `[php-cgi FastCGI, web server]` — the FastCGI PHP
-/// handler is started first, then the web server that proxies `.php` to it.
+/// An ordered set of processes that together serve a site (PHP handler first,
+/// then the web server).
 class SiteLaunch {
   const SiteLaunch(this.steps);
-
-  /// Processes to start in order; the last one is the web server.
   final List<LaunchSpec> steps;
 }
 
 /// Generates per-engine configuration and the commands to serve a site.
 ///
-/// Isolates the "strategy" differences between Apache and Nginx: each writes a
-/// different config file, but both proxy PHP to a shared `php-cgi` FastCGI
-/// process and resolve to a uniform [SiteLaunch]. Config is written under the
-/// app-support directory so we never touch MAMP PRO's own configuration.
+/// Nginx sites run on our OWN runtime (nginx + php-fpm) — MAMP-free. Apache
+/// sites still use MAMP's httpd + php-cgi for now (Apache is the hardest engine
+/// to source independently). Config is written under the app-support directory.
 class ConfigService {
   ConfigService({
     CertService certService = const CertService(),
+    required RuntimeService runtimeService,
     String? homeOverride,
   })  : _certService = certService,
+        _runtimeService = runtimeService,
         _home = homeOverride ??
             Platform.environment['HOME'] ??
             Directory.systemTemp.path;
 
   final CertService _certService;
+  final RuntimeService _runtimeService;
   final String _home;
 
   String get baseDir => '$_home/Library/Application Support/FlutterMamp';
@@ -60,109 +59,111 @@ class ConfigService {
     }
   }
 
-  /// FastCGI port derived from the site's HTTP port (kept internal).
   int _fcgiPort(Site site) => 40000 + (site.port % 20000);
 
-  /// Ensure a TLS cert exists for [site] and return its path (null if OpenSSL
-  /// is unavailable). Used by the "Trust Certificate" action.
+  /// System openssl keeps SSL cert generation MAMP-free (falls back to MAMP's).
+  String _opensslPath(MampEnvironment env) =>
+      File('/usr/bin/openssl').existsSync()
+          ? '/usr/bin/openssl'
+          : (env.opensslBinary ?? '/usr/bin/openssl');
+
   Future<String?> ensureCert(Site site, MampEnvironment env) async {
-    final openssl = env.opensslBinary;
-    if (openssl == null) return null;
     await _ensureDirs();
     final cert = await _certService.ensureCert(
       commonName: site.host,
-      opensslPath: openssl,
+      opensslPath: _opensslPath(env),
       outDir: certsDir,
     );
     return cert.certPath;
   }
 
-  /// Resolve the launch for [site], writing any config it needs.
   Future<SiteLaunch> prepare(Site site, MampEnvironment env) async {
     await _ensureDirs();
-
-    final steps = <LaunchSpec>[];
-
-    // 1) PHP FastCGI handler (php-cgi -b host:port), if a php-cgi is available.
-    final cgi = site.phpVersion?.cgiPath;
-    if (cgi != null) {
-      steps.add(LaunchSpec(
-        executable: cgi,
-        arguments: ['-b', '127.0.0.1:${_fcgiPort(site)}'],
-        workingDirectory: site.documentRoot,
-        environment: const {
-          'PHP_FCGI_CHILDREN': '4',
-          'PHP_FCGI_MAX_REQUESTS': '1000',
-        },
-      ));
-    }
-
-    // 2) Optional TLS cert.
-    ({String certPath, String keyPath})? cert;
-    if (site.sslEnabled) {
-      final openssl = env.opensslBinary;
-      if (openssl == null) {
-        throw StateError('OpenSSL not found in MAMP; cannot enable SSL.');
-      }
-      cert = await _certService.ensureCert(
-        commonName: site.host,
-        opensslPath: openssl,
-        outDir: certsDir,
-      );
-    }
-
-    // 3) The web server.
     switch (site.server) {
       case ServerType.nginx:
-        steps.add(await _prepareNginx(site, env, cert));
+        return _nginxSteps(site, env);
       case ServerType.apache:
-        steps.add(await _prepareApache(site, env, cert));
+        return _apacheSteps(site, env);
     }
-
-    return SiteLaunch(steps);
   }
 
-  // --- Nginx ---------------------------------------------------------------
+  Future<({String certPath, String keyPath})?> _cert(
+      Site site, MampEnvironment env) async {
+    if (!site.sslEnabled) return null;
+    return _certService.ensureCert(
+      commonName: site.host,
+      opensslPath: _opensslPath(env),
+      outDir: certsDir,
+    );
+  }
 
-  Future<LaunchSpec> _prepareNginx(
-    Site site,
-    MampEnvironment env,
-    ({String certPath, String keyPath})? cert,
-  ) async {
-    final nginx = env.nginxBinary;
-    if (nginx == null) throw StateError('Nginx binary not found in MAMP.');
+  // --- Nginx (independent: our nginx + php-fpm) ----------------------------
 
+  Future<SiteLaunch> _nginxSteps(Site site, MampEnvironment env) async {
+    final nginx = _runtimeService.nginxBinary;
+    final phpFpm = _runtimeService.phpFpmBinary;
+    if (nginx == null || phpFpm == null) {
+      throw StateError('Bundled Nginx/php-fpm not installed in runtime.');
+    }
+
+    final fcgi = _fcgiPort(site);
+
+    // php-fpm pool.
+    final fpmConf = '$confDir/php-fpm-${site.id}.conf';
+    await File(fpmConf).writeAsString('''
+[global]
+error_log = $logDir/php-fpm-${site.id}.log
+daemonize = no
+[www]
+listen = 127.0.0.1:$fcgi
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 1
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+''');
+    final phpFpmSpec = LaunchSpec(
+      executable: phpFpm,
+      arguments: ['-F', '-n', '-y', fpmConf],
+    );
+
+    // nginx.
+    final cert = await _cert(site, env);
     final prefix = '$baseDir/nginx/${site.id}';
+    // nginx opens <prefix>/logs/error.log before reading the config, so the
+    // dir must exist.
+    await Directory('$prefix/logs').create(recursive: true);
     await Directory('$prefix/temp').create(recursive: true);
     await Directory('$prefix/fcgi').create(recursive: true);
 
-    final fcgi = _fcgiPort(site);
+    // Paths are quoted because our config lives under "Application Support"
+    // (a space), which unquoted nginx directives cannot parse.
     final sslListen = cert != null
         ? '''
     listen 127.0.0.1:${site.sslPort} ssl;
-    ssl_certificate ${cert.certPath};
-    ssl_certificate_key ${cert.keyPath};'''
+    ssl_certificate "${cert.certPath}";
+    ssl_certificate_key "${cert.keyPath}";'''
         : '';
 
     final confPath = '$confDir/nginx-${site.id}.conf';
-    final conf = '''
+    await File(confPath).writeAsString('''
 worker_processes 1;
 daemon off;
-error_log $logDir/nginx-${site.id}-error.log;
-pid $prefix/nginx.pid;
+error_log "$logDir/nginx-${site.id}-error.log";
+pid "$prefix/nginx.pid";
 events { worker_connections 256; }
 http {
-  access_log $logDir/nginx-${site.id}-access.log;
+  access_log "$logDir/nginx-${site.id}-access.log";
   types { text/html html htm; text/css css; application/javascript js; application/json json; image/png png; image/jpeg jpg jpeg; image/gif gif; image/svg+xml svg; font/woff2 woff2; }
   default_type application/octet-stream;
   sendfile on;
-  client_body_temp_path $prefix/temp;
-  fastcgi_temp_path $prefix/fcgi;
+  client_body_temp_path "$prefix/temp";
+  fastcgi_temp_path "$prefix/fcgi";
   server {
     listen 127.0.0.1:${site.port};
 $sslListen
     server_name ${site.host};
-    root ${site.documentRoot};
+    root "${site.documentRoot}";
     index index.php index.html index.htm;
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
     location ~ \\.php\$ {
@@ -186,34 +187,44 @@ $sslListen
     }
   }
 }
-''';
-    await File(confPath).writeAsString(conf);
+''');
 
-    return LaunchSpec(
+    final nginxSpec = LaunchSpec(
       executable: nginx,
       arguments: ['-p', prefix, '-c', confPath, '-g', 'daemon off;'],
       workingDirectory: prefix,
     );
+
+    // php-fpm first, then nginx (which the repository treats as the server).
+    return SiteLaunch([phpFpmSpec, nginxSpec]);
   }
 
-  // --- Apache --------------------------------------------------------------
+  // --- Apache (still MAMP: httpd + php-cgi) --------------------------------
 
-  Future<LaunchSpec> _prepareApache(
-    Site site,
-    MampEnvironment env,
-    ({String certPath, String keyPath})? cert,
-  ) async {
+  Future<SiteLaunch> _apacheSteps(Site site, MampEnvironment env) async {
     final httpd = env.apacheBinary;
     if (httpd == null) throw StateError('Apache binary not found in MAMP.');
 
+    final steps = <LaunchSpec>[];
+    final cgi = site.phpVersion?.cgiPath;
+    if (cgi != null) {
+      steps.add(LaunchSpec(
+        executable: cgi,
+        arguments: ['-b', '127.0.0.1:${_fcgiPort(site)}'],
+        workingDirectory: site.documentRoot,
+        environment: const {
+          'PHP_FCGI_CHILDREN': '4',
+          'PHP_FCGI_MAX_REQUESTS': '1000',
+        },
+      ));
+    }
+
+    final cert = await _cert(site, env);
     final serverRoot = '${env.rootPath}/Library';
     final modules = '$serverRoot/modules';
     final confPath = '$confDir/httpd-${site.id}.conf';
     final fcgi = _fcgiPort(site);
 
-    // MAMP ships plain `php-cgi`, a *generic* FastCGI backend. mod_proxy_fcgi
-    // defaults to FPM mode, which sets SCRIPT_FILENAME in a way php-cgi rejects
-    // ("No input file specified"). GENERIC mode fixes it.
     final proxyFcgiPresent = File('$modules/mod_proxy_fcgi.so').existsSync();
     final backendType =
         proxyFcgiPresent ? 'ProxyFCGIBackendType GENERIC' : '';
@@ -253,7 +264,7 @@ SSLSessionCache "shmcb:$logDir/ssl_scache-${site.id}(512000)"
 </VirtualHost>'''
         : '';
 
-    final conf = '''
+    await File(confPath).writeAsString('''
 ServerRoot "$serverRoot"
 Listen 127.0.0.1:${site.port}
 ${loadIfPresent('mpm_prefork_module', 'mod_mpm_prefork.so')}
@@ -274,13 +285,13 @@ DocumentRoot "${site.documentRoot}"
 $dirBlock
 $phpHandler
 $sslBlock
-''';
-    await File(confPath).writeAsString(conf);
+''');
 
-    return LaunchSpec(
+    steps.add(LaunchSpec(
       executable: httpd,
       arguments: ['-f', confPath, '-X'],
       workingDirectory: serverRoot,
-    );
+    ));
+    return SiteLaunch(steps);
   }
 }
