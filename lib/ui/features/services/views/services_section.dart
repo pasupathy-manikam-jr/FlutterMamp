@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/models/managed_service.dart';
+import '../../../../domain/models/service_type.dart';
 import '../../../core/theme.dart';
 import '../view_models/services_view_model.dart';
+import 'import_db_dialog.dart';
 
 /// The "SERVICES" group pinned at the bottom of the sidebar: Redis, MySQL,
 /// Memcached, MailHog with inline start/stop, mirroring MAMP PRO's services.
@@ -77,6 +79,16 @@ class _ServiceRow extends StatelessWidget {
               ],
             ),
           ),
+          if (service.type == ServiceType.mysql &&
+              service.status.isActive &&
+              viewModel.mysqlClientAvailable)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Import SQL dump',
+              iconSize: 18,
+              icon: const Icon(Icons.upload_file),
+              onPressed: () => showImportDbDialog(context, viewModel),
+            ),
           if (!service.available)
             const SizedBox.shrink()
           else if (service.status.isTransitioning)

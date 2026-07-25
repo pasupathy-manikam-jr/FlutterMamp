@@ -47,4 +47,7 @@ class RuntimeService {
 
   /// Our own PHP CLI binary, or null if not installed.
   String? get phpCliBinary => _exists('$root/bin/php');
+
+  /// Our own MySQL client binary, or null if not installed.
+  String? get mysqlClient => _exists('$root/mysql/bin/mysql');
 }

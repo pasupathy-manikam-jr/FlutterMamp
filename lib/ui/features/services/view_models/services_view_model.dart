@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../../data/repositories/service_repository.dart';
+import '../../../../data/services/database_service.dart';
 import '../../../../domain/models/managed_service.dart';
 import '../../../../domain/models/service_type.dart';
 
@@ -36,6 +37,23 @@ class ServicesViewModel extends ChangeNotifier {
       await _repository.start(type);
     }
   }
+
+  bool get mysqlClientAvailable => _repository.mysqlClientAvailable;
+
+  Future<String?> chooseSqlFile() => _repository.chooseSqlFile();
+
+  Future<DbResult> importDump({
+    required String dumpPath,
+    required String database,
+    String user = 'root',
+    String password = 'root',
+  }) =>
+      _repository.importDump(
+        dumpPath: dumpPath,
+        database: database,
+        user: user,
+        password: password,
+      );
 
   @override
   void dispose() {

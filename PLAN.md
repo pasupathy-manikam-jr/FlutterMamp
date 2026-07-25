@@ -328,3 +328,10 @@ lib/
 - [ ] Data migration: cp4's DB currently lives in MAMP's MySQL; our MySQL is a
       fresh empty instance (dump/import needed to fully switch).
 - [ ] In-app "download runtime" so a fresh install fetches its own binaries.
+- [x] **Import SQL dump** view: pick a `.sql`/`.sql.gz`, choose DB + creds
+      (root/root), imports via bundled mysql client (`DatabaseService`). Button on
+      the running MySQL row.
+- [x] MySQL: our PHP connects fine (PDO OK) even with caching_sha2_password;
+      set root password + created cp4's `aimsfx_db3`.
+- [ ] MailHog skipped — x86_64 binary + no Rosetta. Replace with native arm64
+      **Mailpit** later. (binary removed → shows "not installed".)

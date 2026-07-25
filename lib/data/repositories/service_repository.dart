@@ -3,9 +3,11 @@ import 'dart:async';
 import '../../domain/models/managed_service.dart';
 import '../../domain/models/server_status.dart';
 import '../../domain/models/service_type.dart';
+import '../services/database_service.dart';
 import '../services/runtime_service.dart';
 import '../services/server_process_service.dart';
 import '../services/service_launcher.dart';
+import '../services/system_service.dart';
 
 /// Single source of truth for the global background services (Redis, MySQL,
 /// Memcached, MailHog). Manages our OWN runtime binaries — independent of MAMP.
@@ -14,13 +16,45 @@ class ServiceRepository {
     required RuntimeService runtimeService,
     required ServiceLauncher serviceLauncher,
     required ServerProcessService processService,
+    required DatabaseService databaseService,
+    required SystemService systemService,
   })  : _runtimeService = runtimeService,
         _serviceLauncher = serviceLauncher,
-        _processService = processService;
+        _processService = processService,
+        _databaseService = databaseService,
+        _systemService = systemService;
 
   final RuntimeService _runtimeService;
   final ServiceLauncher _serviceLauncher;
   final ServerProcessService _processService;
+  final DatabaseService _databaseService;
+  final SystemService _systemService;
+
+  bool get mysqlClientAvailable => _runtimeService.mysqlClient != null;
+
+  /// Native picker for a `.sql`/`.sql.gz` dump.
+  Future<String?> chooseSqlFile() =>
+      _systemService.chooseFile(prompt: 'Select a .sql or .sql.gz dump');
+
+  /// Import [dumpPath] into [database] (creates it if missing).
+  Future<DbResult> importDump({
+    required String dumpPath,
+    required String database,
+    String user = 'root',
+    String password = 'root',
+  }) async {
+    final client = _runtimeService.mysqlClient;
+    if (client == null) {
+      return const DbResult(false, 'MySQL client not installed.');
+    }
+    return _databaseService.importDump(
+      mysqlClient: client,
+      dumpPath: dumpPath,
+      database: database,
+      user: user,
+      password: password,
+    );
+  }
 
   static const int _maxLogLines = 400;
 

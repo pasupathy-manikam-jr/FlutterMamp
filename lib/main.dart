@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'data/repositories/service_repository.dart';
 import 'data/repositories/site_repository.dart';
 import 'data/services/config_service.dart';
+import 'data/services/database_service.dart';
 import 'data/services/hosts_service.dart';
 import 'data/services/mamp_service.dart';
 import 'data/services/runtime_service.dart';
@@ -20,6 +21,7 @@ void main() {
   // via constructors (per the Flutter architecture skill — no service locator).
   final processService = ServerProcessService();
   final runtimeService = RuntimeService();
+  final systemService = SystemService();
 
   // Sites: Nginx sites run on our own runtime (nginx + php-fpm); Apache still
   // uses MAMP for now.
@@ -28,7 +30,7 @@ void main() {
     configService: ConfigService(runtimeService: runtimeService),
     processService: processService,
     settingsService: SettingsService(),
-    systemService: SystemService(),
+    systemService: systemService,
     hostsService: const HostsService(),
   );
   final sitesViewModel = SitesViewModel(repository: siteRepository)..load();
@@ -38,6 +40,8 @@ void main() {
     runtimeService: runtimeService,
     serviceLauncher: ServiceLauncher(),
     processService: processService,
+    databaseService: const DatabaseService(),
+    systemService: systemService,
   );
   final servicesViewModel =
       ServicesViewModel(repository: serviceRepository)..load();

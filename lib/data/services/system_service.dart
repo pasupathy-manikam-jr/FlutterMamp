@@ -35,6 +35,19 @@ class SystemService {
         : path;
   }
 
+  /// Show a native "choose file" dialog and return the selected path, or null
+  /// if cancelled. Plugin-free (osascript).
+  Future<String?> chooseFile({String prompt = 'Select a file'}) async {
+    final escaped = prompt.replaceAll('"', r'\"');
+    final result = await Process.run('osascript', [
+      '-e',
+      'POSIX path of (choose file with prompt "$escaped")',
+    ]);
+    if (result.exitCode != 0) return null;
+    final path = (result.stdout as String).trim();
+    return path.isEmpty ? null : path;
+  }
+
   /// Add [certPath] to the System keychain as a trusted root so browsers accept
   /// the self-signed certificate (the "green padlock"). Requires admin, so it
   /// goes through the native `osascript … with administrator privileges` prompt.
