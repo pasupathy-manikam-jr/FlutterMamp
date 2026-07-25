@@ -39,14 +39,13 @@ class ServiceLauncher {
           executable: binaryPath,
           arguments: ['-p', '${service.port}', '-l', '127.0.0.1'],
         );
-      case ServiceType.mailhog:
-        // UI + API on the service port; SMTP capture on 1025.
+      case ServiceType.mailpit:
+        // Web inbox on the service port; SMTP capture on 1025.
         return LaunchSpec(
           executable: binaryPath,
           arguments: [
-            '-ui-bind-addr', '127.0.0.1:${service.port}',
-            '-api-bind-addr', '127.0.0.1:${service.port}',
-            '-smtp-bind-addr', '127.0.0.1:1025',
+            '--listen', '127.0.0.1:${service.port}',
+            '--smtp', '127.0.0.1:1025',
           ],
         );
       case ServiceType.mysql:
