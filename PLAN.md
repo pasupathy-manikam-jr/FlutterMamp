@@ -7,22 +7,32 @@ A MAMP PRO–style desktop app built with Flutter, managing traditional web serv
 
 ## 0. Current State & Prerequisites
 
-**Current state of this directory:** it is an empty Android Studio / Gradle scaffold
-(`build.gradle.kts`, `gradlew`, `app/`). It is **not** a Flutter project. We will
-either re-scaffold it as a Flutter app or start fresh.
+**Directory is now a Flutter macOS project** (`lib/`, `macos/`, `pubspec.yaml`). The
+original Android/Gradle scaffold was removed. Code compiles clean (`flutter analyze`:
+no issues) and unit tests pass. It cannot be *run* yet — that needs full Xcode.
 
-**Missing from this machine — must be installed first:**
+**Environment status (as of 2026-07-25):**
 
-| Tool | Status | Needed for |
-|------|--------|-----------|
-| Flutter SDK | ❌ not installed | everything |
-| Xcode + CLI tools | ❔ verify | macOS desktop build, codesigning |
-| CocoaPods | ❔ verify | Flutter macOS plugins |
-| Homebrew | ❌ not installed | fast path: managing existing services |
-| PHP | ❌ not installed | testing any server |
+| Tool | Status | Notes |
+|------|--------|-------|
+| Flutter SDK | ✅ 3.44.8 stable | `~/development/flutter`, on PATH, macOS desktop enabled |
+| Dart | ✅ 3.12.2 | bundled with Flutter |
+| **Full Xcode** | ❌ **BLOCKER** | only Command Line Tools present; required to build/run macOS app — user must install from App Store |
+| CocoaPods | ❌ not installed | needs Homebrew (system Ruby 2.6 too old); only needed once native plugins are added — not yet |
+| Homebrew | ❌ not installed | installer needs interactive sudo/tty; user must run it. Not required for current scope |
+| PHP / Apache / Nginx | ✅ via MAMP PRO | PHP 7.3–8.5 (8.3 running as project `cp4`), Apache 2.4.66, Nginx 1.29.4 |
+| FrankenPHP / RoadRunner / Swoole | ✅ installed | parked (see §2 scope); binaries in `tools/servers/`, Swoole 6.2.2 built for MAMP PHP 8.3 |
 
-**Action item P0:** install Flutter, enable macOS desktop
-(`flutter config --enable-macos-desktop`), confirm `flutter doctor` is green for macOS.
+**P0 action item — user only:** install **full Xcode** from the App Store, then
+`sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer`,
+`sudo xcodebuild -runFirstLaunch`, `sudo xcodebuild -license accept`.
+
+**Scope note:** current milestone focuses on **Apache, Nginx, PHP** (all present via
+MAMP). FrankenPHP/RoadRunner/Swoole are installed but deferred.
+
+**Flutter skills installed:** the official `flutter/skills` set (22 skills) is in
+`.claude/skills/`. The layered architecture below follows
+`flutter-apply-architecture-best-practices`.
 
 ---
 
@@ -134,7 +144,8 @@ privileged helper via `launchd`. Plan:
 ## 4. Tech Stack
 
 - **Flutter** (stable), macOS desktop target.
-- **State**: Riverpod.
+- **State**: MVVM with `ChangeNotifier` ViewModels + manual constructor injection
+  (per the `flutter-apply-architecture-best-practices` skill — **no Riverpod**).
 - **Process control**: `dart:io` `Process.start`.
 - **Native glue**: Swift via `MethodChannel` (privileged helper, macOS niceties).
 - **Config templating**: plain Dart string templates (mustache-style) per strategy.
@@ -146,9 +157,10 @@ privileged helper via `launchd`. Plan:
 ## 5. Milestones
 
 ### M0 — Environment & scaffold
-- [ ] Install Flutter, enable macOS desktop, `flutter doctor` green.
-- [ ] Decide: re-scaffold this dir as Flutter, or new dir (Android scaffold is unused).
-- [ ] `flutter create` the macOS app; run the default window.
+- [x] Install Flutter 3.44.8, enable macOS desktop, device detected.
+- [x] Removed unused Android scaffold; `flutter create` macOS app in this dir.
+- [x] Disable macOS sandbox entitlements (needed to spawn MAMP binaries).
+- [ ] Run the default window — **blocked on full Xcode install**.
 
 ### M1 — Core process layer
 - [ ] `ProcessRunner` wrapper around `Process.start` (spawn, stop, capture stdout/err).
@@ -206,7 +218,75 @@ privileged helper via `launchd`. Plan:
 
 ## 8. Immediate Next Steps
 
-1. Install Flutter + enable macOS desktop (P0 blocker).
-2. Confirm whether to reuse this directory or create a fresh Flutter project.
-3. Scaffold the app and build the `ProcessRunner` + `ServerStrategy` skeleton.
-4. Implement `FrankenPhpStrategy` end-to-end as the first vertical slice.
+1. **User:** install full Xcode (P0 blocker for running the app).
+2. Once Xcode is in: `flutter run -d macos`, then debug the real start/stop of
+   Apache/Nginx/PHP against MAMP binaries.
+3. Refine Apache/Nginx generated configs against runtime (module paths, PHP FastCGI).
+4. Add persistence (`Site` list to JSON) and multi-host support.
+
+---
+
+## 9. Implemented Architecture (as built)
+
+Layered per the `flutter-apply-architecture-best-practices` skill:
+
+```text
+lib/
+├── domain/models/          # immutable: ServerType, ServerStatus, PhpVersion,
+│                           #   MampEnvironment, ManagedServer
+├── data/
+│   ├── services/           # MampService (discovery), ConfigService (per-engine
+│   │                       #   config + LaunchSpec — the "strategy"),
+│   │                       #   ServerProcessService (dart:io Process wrapper)
+│   └── repositories/       # ServerRepository — single source of truth, emits
+│                           #   changes stream, orchestrates the services
+└── ui/
+    ├── core/theme.dart     # palette + status→traffic-light color
+    └── features/servers/
+        ├── view_models/    # ServersViewModel (ChangeNotifier)
+        └── views/          # ServersView (toolbar+sidebar+detail), ServerTile,
+                            #   ServerDetail, LogPanel
+```
+
+- **Engine strategies** live in `ConfigService`: PHP = `php -S`; Nginx = generated
+  foreground `nginx.conf`; Apache = generated foreground `httpd.conf` (`-X`). All
+  run in the foreground and are stopped by killing the pid.
+- **Ports** default to 8000/8001/8002 to avoid clashing with running MAMP PRO.
+- **Config output** goes to `~/Library/Application Support/FlutterMamp/` — never
+  touches MAMP PRO's own config.
+- **Verified:** `flutter analyze` clean; domain unit tests pass. Not yet run (Xcode).
+
+---
+
+## 10. Progress Log
+
+- **2026-07-25**
+  - Installed Flutter 3.44.8 + macOS desktop; parked FrankenPHP/RoadRunner/Swoole
+    (built Swoole 6.2.2 for MAMP PHP 8.3 via a from-source m4→autoconf toolchain).
+  - Narrowed active scope to Apache/Nginx/PHP (all via MAMP).
+  - Installed official `flutter/skills` (22) into `.claude/skills/`.
+  - Scaffolded Flutter macOS app; removed Android scaffold; disabled sandbox.
+  - Built full layered MVVM vertical slice (domain + data + UI) for Apache/Nginx/PHP.
+  - Added settings persistence (`SettingsService` → `settings.json`) and
+    open-in-browser / reveal-in-Finder (`SystemService` via macOS `open`, no plugin).
+  - Chose the non-App-Store Xcode route: installed the `xcodes` CLI; user is
+    downloading Xcode direct from Apple (accepted Developer T&Cs to clear a 403).
+  - Installed Xcode 26.6 (via `xcodes`, non-App-Store); app **builds & runs** on macOS.
+  - Removed the Claude co-author trailer from git history (amend + force-push).
+  - **Refactored from fixed engines → user-created Sites** (like MAMP PRO Hosts):
+    `Site` model, `SiteRepository` with add/edit/delete/start/stop + JSON persistence
+    (`sites.json`), native folder picker via `osascript` (no plugin/CocoaPods),
+    Add-Site dialog, editable detail pane, sidebar with +/− and status dots.
+  - Dropped PHP built-in server as an engine — engines are now **Apache/Nginx only**
+    (matches MAMP PRO); PHP runs via **FastCGI** to MAMP's `php-cgi` (2 processes/site).
+  - Added **custom hostnames** (`/etc/hosts` via native admin prompt — `HostsService`)
+    and **SSL/HTTPS** (self-signed certs via MAMP `openssl` — `CertService`), with
+    Apache/Nginx TLS + FastCGI config generation. UI gains Host Name + SSL toggle/port.
+  - Fixes from live testing on the real `cp4` PHP app:
+    - Detail-pane fields now commit **on change** (hostname/port were lost if you
+      clicked Start/Open before pressing Enter).
+    - Apache FastCGI: added **`ProxyFCGIBackendType GENERIC`** — MAMP's `php-cgi`
+      is a generic FastCGI backend, and mod_proxy_fcgi's default FPM mode caused
+      "No input file specified". Verified by reproducing via curl against MAMP's
+      httpd + php-cgi (plain SetHandler failed; GENERIC served the real app).
+  - `flutter analyze`: no issues. Unit tests: pass. App verified running on macOS.

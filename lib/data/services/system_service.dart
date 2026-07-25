@@ -1,0 +1,38 @@
+import 'dart:io';
+
+/// Thin wrapper around macOS system integration points we need.
+///
+/// Kept as a service (not a plugin) so the app stays free of native plugin
+/// dependencies — and therefore free of a CocoaPods requirement.
+class SystemService {
+  /// Open [url] in the user's default browser via the macOS `open` command.
+  Future<void> openUrl(String url) async {
+    await Process.run('open', [url]);
+  }
+
+  /// Reveal a path in Finder.
+  Future<void> revealInFinder(String path) async {
+    await Process.run('open', ['-R', path]);
+  }
+
+  /// Show a native macOS "choose folder" dialog and return the selected path,
+  /// or null if the user cancels. Uses `osascript` so we need no file-picker
+  /// plugin (and therefore no CocoaPods).
+  Future<String?> chooseFolder({
+    String prompt = 'Select the document root',
+  }) async {
+    final escaped = prompt.replaceAll('"', r'\"');
+    final result = await Process.run('osascript', [
+      '-e',
+      'POSIX path of (choose folder with prompt "$escaped")',
+    ]);
+    if (result.exitCode != 0) return null; // user cancelled (osascript -128)
+    final path = (result.stdout as String).trim();
+    if (path.isEmpty) return null;
+    // Strip any trailing slash for consistency.
+    return path.endsWith('/') && path.length > 1
+        ? path.substring(0, path.length - 1)
+        : path;
+  }
+}
+

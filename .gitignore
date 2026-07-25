@@ -1,15 +1,43 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Miscellaneous
+*.class
+*.log
+*.swp
 .DS_Store
-/build
-/captures
+.history
+.buildlog/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+.gradle/
+
+# Flutter / Dart / Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/captures/
+**/doc/api/
+
+# macOS (Xcode / CocoaPods)
+**/macos/Flutter/ephemeral/
+**/Pods/
+**/xcuserdata/
+DerivedData/
+*.moved-aside
+
+# Local downloaded / built tooling — server binaries + toolchain, NOT source.
+# Reproduce via the download/build steps documented in PLAN.md.
+/tools/
+
+# Claude Code local skills (installed via `npx skills add flutter/skills`)
+/.claude/
+
+# Android leftovers
+/local.properties
 .externalNativeBuild
 .cxx
-local.properties
