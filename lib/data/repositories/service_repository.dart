@@ -183,6 +183,10 @@ class ServiceRepository {
         executable: fp,
         arguments: ['php-server', '-r', root, '-l', '127.0.0.1:${type.port}'],
         workingDirectory: root,
+        // Suppress PHP 8.5 deprecation noise from tool vendor libs.
+        environment: {
+          'PHP_INI_SCAN_DIR': '${_runtimeService.root}/etc/php-tools',
+        },
       );
       final running = await _processService.start(
         spec,
