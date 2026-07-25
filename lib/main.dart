@@ -1,5 +1,6 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'data/repositories/service_repository.dart';
 import 'data/repositories/site_repository.dart';
@@ -90,7 +91,7 @@ class _FlutterMampAppState extends State<FlutterMampApp> {
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
         await widget.onExit();
-        return AppExitResponse.exit;
+        return ui.AppExitResponse.exit;
       },
     );
   }
