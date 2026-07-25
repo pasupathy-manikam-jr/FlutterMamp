@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/view_models/services_view_model.dart';
 import '../../services/views/services_section.dart';
+import '../../services/views/tools_section.dart';
 import '../view_models/sites_view_model.dart';
 import 'site_detail.dart';
 import 'site_form_dialog.dart';
@@ -174,7 +175,16 @@ class _Sidebar extends StatelessWidget {
                   ),
           ),
           const Divider(height: 1),
-          ServicesSection(viewModel: servicesViewModel),
+          SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ServicesSection(viewModel: servicesViewModel),
+                const Divider(height: 1),
+                ToolsSection(viewModel: servicesViewModel),
+              ],
+            ),
+          ),
         ],
       ),
     );

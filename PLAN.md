@@ -333,5 +333,13 @@ lib/
       the running MySQL row.
 - [x] MySQL: our PHP connects fine (PDO OK) even with caching_sha2_password;
       set root password + created cp4's `aimsfx_db3`.
-- [ ] MailHog skipped — x86_64 binary + no Rosetta. Replace with native arm64
-      **Mailpit** later. (binary removed → shows "not installed".)
+- [x] **Mailpit** (native arm64) replaces MailHog — working start/stop.
+- [x] **Orphan cleanup**: reap-on-startup (`ProcessCleanup` pkills our runtime
+      processes) + stop-on-quit (`AppLifecycleListener.onExitRequested` disposes
+      repos). Fixes leftover redis/httpd squatting on ports after force-quit.
+- [x] **Database admin tools** (TOOLS sidebar section): **Adminer** (single file)
+      and **phpMyAdmin** — both served on demand by **FrankenPHP** (its embedded
+      PHP 8.5.8 has `mysqli`, which our php-fpm build lacks). Open button starts
+      FrankenPHP + opens browser; phpMyAdmin auto-logs into our MySQL (root/root).
+      Verified: both return HTTP 200 with their UIs.
+- [x] **Import SQL dump** view (📤 on the MySQL row) via bundled mysql client.

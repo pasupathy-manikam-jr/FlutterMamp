@@ -50,4 +50,13 @@ class RuntimeService {
 
   /// Our own MySQL client binary, or null if not installed.
   String? get mysqlClient => _exists('$root/mysql/bin/mysql');
+
+  /// FrankenPHP binary (serves the bundled web tools; has mysqli), or null.
+  String? get frankenphpBinary => _exists('$root/bin/frankenphp');
+
+  /// Document root for a bundled tool (e.g. `adminer`), or null if missing.
+  String? toolRoot(String dirName) {
+    final path = '$root/tools/$dirName';
+    return Directory(path).existsSync() ? path : null;
+  }
 }
