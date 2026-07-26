@@ -12,10 +12,13 @@ import 'data/services/mamp_service.dart';
 import 'data/services/process_cleanup.dart';
 import 'data/services/runtime_service.dart';
 import 'data/services/server_process_service.dart';
+import 'data/services/runtime_installer.dart';
 import 'data/services/service_launcher.dart';
 import 'data/services/settings_service.dart';
 import 'data/services/system_service.dart';
 import 'ui/core/theme.dart';
+import 'ui/features/runtime/runtime_setup_dialog.dart';
+import 'ui/features/runtime/runtime_setup_view_model.dart';
 import 'ui/features/services/view_models/services_view_model.dart';
 import 'ui/features/sites/view_models/sites_view_model.dart';
 import 'ui/features/sites/views/sites_view.dart';
@@ -58,9 +61,14 @@ Future<void> main() async {
   final servicesViewModel =
       ServicesViewModel(repository: serviceRepository)..load();
 
+  // First-launch runtime download prompt.
+  final runtimeSetup =
+      RuntimeSetupViewModel(installer: RuntimeInstaller(paths: paths));
+
   runApp(FlutterMampApp(
     sitesViewModel: sitesViewModel,
     servicesViewModel: servicesViewModel,
+    runtimeSetup: runtimeSetup,
     onExit: () async {
       // Stop everything we started so nothing is left orphaned on quit.
       await serviceRepository.dispose();
@@ -74,11 +82,13 @@ class FlutterMampApp extends StatefulWidget {
     super.key,
     required this.sitesViewModel,
     required this.servicesViewModel,
+    required this.runtimeSetup,
     required this.onExit,
   });
 
   final SitesViewModel sitesViewModel;
   final ServicesViewModel servicesViewModel;
+  final RuntimeSetupViewModel runtimeSetup;
   final Future<void> Function() onExit;
 
   @override
@@ -87,6 +97,7 @@ class FlutterMampApp extends StatefulWidget {
 
 class _FlutterMampAppState extends State<FlutterMampApp> {
   late final AppLifecycleListener _lifecycle;
+  final _navKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -97,6 +108,14 @@ class _FlutterMampAppState extends State<FlutterMampApp> {
         return ui.AppExitResponse.exit;
       },
     );
+    // After first frame, prompt to download any missing runtime components.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.runtimeSetup.check();
+      final ctx = _navKey.currentContext;
+      if (ctx != null && widget.runtimeSetup.hasMissing) {
+        showRuntimeSetupDialog(ctx, widget.runtimeSetup);
+      }
+    });
   }
 
   @override
@@ -108,6 +127,7 @@ class _FlutterMampAppState extends State<FlutterMampApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navKey,
       title: 'OricMamp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),

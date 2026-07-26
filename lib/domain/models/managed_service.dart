@@ -11,6 +11,7 @@ class ManagedService {
     this.pid,
     this.errorMessage,
     this.logLines = const [],
+    this.installProgress,
   });
 
   final ServiceType type;
@@ -24,6 +25,9 @@ class ManagedService {
   final String? errorMessage;
   final List<String> logLines;
 
+  /// 0..1 while the binary is being downloaded on demand; null otherwise.
+  final double? installProgress;
+
   ManagedService copyWith({
     ServerStatus? status,
     int? port,
@@ -33,6 +37,8 @@ class ManagedService {
     String? errorMessage,
     bool clearError = false,
     List<String>? logLines,
+    double? installProgress,
+    bool clearInstallProgress = false,
   }) {
     return ManagedService(
       type: type,
@@ -42,6 +48,9 @@ class ManagedService {
       pid: clearPid ? null : (pid ?? this.pid),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       logLines: logLines ?? this.logLines,
+      installProgress: clearInstallProgress
+          ? null
+          : (installProgress ?? this.installProgress),
     );
   }
 }
