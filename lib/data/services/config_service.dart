@@ -67,25 +67,6 @@ class ConfigService {
     return path;
   }
 
-  /// Parse php.ini directives into additive `-d key=value` flags (used for
-  /// php-cgi, so we don't replace MAMP's default php.ini).
-  List<String> _phpDFlags(String phpIni) {
-    final flags = <String>[];
-    for (final raw in phpIni.split('\n')) {
-      final line = raw.trim();
-      if (line.isEmpty || line.startsWith(';') || line.startsWith('#')) {
-        continue;
-      }
-      final eq = line.indexOf('=');
-      if (eq <= 0) continue;
-      final key = line.substring(0, eq).trim();
-      final value = line.substring(eq + 1).trim();
-      flags.add('-d');
-      flags.add('$key=$value');
-    }
-    return flags;
-  }
-
   /// System openssl keeps SSL cert generation MAMP-free (falls back to MAMP's).
   String _opensslPath(DevEnvironment env) =>
       File('/usr/bin/openssl').existsSync()
@@ -137,30 +118,7 @@ class ConfigService {
     }
 
     final fcgi = _fcgiPort(site);
-
-    // php-fpm pool.
-    final fpmConf = '$confDir/php-fpm-${site.id}.conf';
-    await File(fpmConf).writeAsString('''
-[global]
-error_log = $logDir/php-fpm-${site.id}.log
-daemonize = no
-[www]
-listen = 127.0.0.1:$fcgi
-pm = dynamic
-pm.max_children = 5
-pm.start_servers = 1
-pm.min_spare_servers = 1
-pm.max_spare_servers = 3
-''');
-    // Our static php-fpm has extensions compiled in, so loading the site's
-    // php.ini via -c is safe (empty → built-in defaults, so we keep -n).
-    final ini = site.phpIni.trim();
-    final phpFpmSpec = LaunchSpec(
-      executable: phpFpm,
-      arguments: ini.isEmpty
-          ? ['-F', '-n', '-y', fpmConf]
-          : ['-F', '-y', fpmConf, '-c', await _writePhpIni(site)],
-    );
+    final phpFpmSpec = await _phpFpmSpec(site, phpFpm, fcgi);
 
     // nginx.
     final cert = await _cert(site, env);
@@ -256,35 +214,47 @@ $sslListen
     ]);
   }
 
-  // --- Apache (still MAMP: httpd + php-cgi) --------------------------------
+  /// php-fpm pool + launch spec, shared by the Nginx and Apache paths.
+  Future<LaunchSpec> _phpFpmSpec(Site site, String phpFpm, int fcgi) async {
+    final fpmConf = '$confDir/php-fpm-${site.id}.conf';
+    await File(fpmConf).writeAsString('''
+[global]
+error_log = $logDir/php-fpm-${site.id}.log
+daemonize = no
+[www]
+listen = 127.0.0.1:$fcgi
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 1
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+''');
+    // Our static php-fpm has extensions compiled in, so loading the site's
+    // php.ini via -c is safe (empty → built-in defaults, so we keep -n).
+    final ini = site.phpIni.trim();
+    return LaunchSpec(
+      executable: phpFpm,
+      arguments: ini.isEmpty
+          ? ['-F', '-n', '-y', fpmConf]
+          : ['-F', '-y', fpmConf, '-c', await _writePhpIni(site)],
+    );
+  }
+
+  // --- Apache (independent: bundled httpd + php-fpm via mod_proxy_fcgi) -----
 
   Future<SiteLaunch> _apacheSteps(Site site, DevEnvironment env) async {
-    final httpd = env.apacheBinary;
-    if (httpd == null) throw StateError('Apache binary not found in MAMP.');
-
-    final steps = <LaunchSpec>[];
-    final cgi = site.phpVersion?.cgiPath;
-    if (cgi != null) {
-      steps.add(LaunchSpec(
-        executable: cgi,
-        // Additive -d flags preserve MAMP's default php.ini (extensions etc.).
-        arguments: [
-          '-b', '127.0.0.1:${_fcgiPort(site)}',
-          ..._phpDFlags(site.phpIni),
-        ],
-        workingDirectory: site.documentRoot,
-        environment: const {
-          'PHP_FCGI_CHILDREN': '4',
-          'PHP_FCGI_MAX_REQUESTS': '1000',
-        },
-      ));
+    final httpd = _runtimeService.apacheBinary;
+    final phpFpm = _runtimeService.phpFpmBinary;
+    final serverRoot = _runtimeService.apacheRoot;
+    if (httpd == null || phpFpm == null || serverRoot == null) {
+      // No bundled Apache/php-fpm yet: serve via FrankenPHP so the site works.
+      return _frankenPhpSteps(site);
     }
-
-    final cert = await _cert(site, env);
-    final serverRoot = '${env.rootPath}/Library';
     final modules = '$serverRoot/modules';
+    final cert = await _cert(site, env);
     final confPath = '$confDir/httpd-${site.id}.conf';
     final fcgi = _fcgiPort(site);
+    final phpFpmSpec = await _phpFpmSpec(site, phpFpm, fcgi);
 
     final proxyFcgiPresent = File('$modules/mod_proxy_fcgi.so').existsSync();
     final backendType =
@@ -348,11 +318,13 @@ $phpHandler
 $sslBlock
 ''');
 
-    steps.add(LaunchSpec(
-      executable: httpd,
-      arguments: ['-f', confPath, '-X'],
-      workingDirectory: serverRoot,
-    ));
-    return SiteLaunch(steps);
+    return SiteLaunch([
+      phpFpmSpec,
+      LaunchSpec(
+        executable: httpd,
+        arguments: ['-f', confPath, '-X'],
+        workingDirectory: serverRoot,
+      ),
+    ]);
   }
 }

@@ -29,6 +29,7 @@ class RuntimeManifest {
     RuntimeComponent('php', 'PHP (php-fpm + CLI)', 'bin/php-fpm', 40,
         windowsProbe: 'bin/php'),
     RuntimeComponent('nginx', 'Nginx', 'nginx/sbin/nginx', 5),
+    RuntimeComponent('apache', 'Apache (httpd)', 'apache/bin/httpd', 15),
     RuntimeComponent('mysql', 'MySQL', 'mysql/bin/mysqld', 520),
     RuntimeComponent('redis', 'Redis', 'bin/redis-server', 4),
     RuntimeComponent('memcached', 'Memcached', 'bin/memcached', 2),

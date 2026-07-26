@@ -41,6 +41,12 @@ class RuntimeService {
   /// Our own Nginx binary, or null if not installed.
   String? get nginxBinary => _bin('$root/nginx/sbin/nginx');
 
+  /// Our own Apache httpd binary, or null if not installed.
+  String? get apacheBinary => _bin('$root/apache/bin/httpd');
+
+  /// Apache ServerRoot (its install tree), or null if not installed.
+  String? get apacheRoot => apacheBinary != null ? '$root/apache' : null;
+
   /// Our own php-fpm binary, or null if not installed. (None on Windows — PHP
   /// there has no php-fpm SAPI; sites serve via FrankenPHP instead.)
   String? get phpFpmBinary => _bin('$root/bin/php-fpm');
