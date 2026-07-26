@@ -8,6 +8,31 @@ Adminer) from one native app — self-contained and open source.
 Built with Flutter. No external stack required — OricDevServer downloads and runs
 its **own** bundled runtime binaries on first launch.
 
+## Platform support
+
+| Platform | Status |
+|----------|--------|
+| **macOS** (Apple Silicon) | ✅ **Tested & working** |
+| **Linux** (x64) | 🚧 Built — not yet tested |
+| **Windows** (x64) | 🚧 Built — not yet tested |
+
+## Bundled services
+
+Each component is downloaded on demand from the release on first launch — nothing
+else to install.
+
+| Component | Role |
+|-----------|------|
+| **Apache** (httpd) | Web server (`.htaccess` / `mod_rewrite`) |
+| **Nginx** | Web server |
+| **FrankenPHP** | Web server with embedded PHP |
+| **PHP** (php-fpm + CLI) | PHP runtime for sites and tools |
+| **MySQL** | Database (self-initializes, `root`/`root`) |
+| **Redis** | In-memory cache / key-value store |
+| **Memcached** | In-memory cache |
+| **Mailpit** | Local SMTP capture + web mail inbox |
+| **phpMyAdmin** / **Adminer** | Database web tools |
+
 ## Features
 
 - One-click start/stop of web servers, PHP, and services
