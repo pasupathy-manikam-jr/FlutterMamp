@@ -194,7 +194,9 @@ $sslListen
 
     final nginxSpec = LaunchSpec(
       executable: nginx,
-      arguments: ['-p', prefix, '-c', confPath, '-g', 'daemon off;'],
+      // The generated config already sets `daemon off;`, so don't also pass
+      // `-g 'daemon off;'` — nginx rejects the duplicate directive.
+      arguments: ['-p', prefix, '-c', confPath],
       workingDirectory: prefix,
     );
 
