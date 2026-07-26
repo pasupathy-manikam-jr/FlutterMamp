@@ -23,14 +23,20 @@ class CertService {
       return (certPath: certPath, keyPath: keyPath);
     }
 
-    final san = 'subjectAltName=DNS:$commonName,DNS:localhost,IP:127.0.0.1';
+    // A proper server *leaf* certificate: browsers reject a cert used for TLS
+    // that is marked as a CA (BasicConstraints CA:TRUE) or lacks a SAN /
+    // serverAuth EKU. These extensions produce a cert modern browsers accept
+    // once it is trusted in the keychain.
     final result = await Process.run(opensslPath, [
-      'req', '-x509', '-newkey', 'rsa:2048', '-nodes',
+      'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256',
       '-keyout', keyPath,
       '-out', certPath,
       '-days', '825',
       '-subj', '/CN=$commonName',
-      '-addext', san,
+      '-addext', 'subjectAltName=DNS:$commonName,DNS:localhost,IP:127.0.0.1',
+      '-addext', 'basicConstraints=critical,CA:FALSE',
+      '-addext', 'keyUsage=critical,digitalSignature,keyEncipherment',
+      '-addext', 'extendedKeyUsage=serverAuth',
     ]);
     if (result.exitCode != 0) {
       throw StateError('openssl failed to create a certificate: ${result.stderr}');
