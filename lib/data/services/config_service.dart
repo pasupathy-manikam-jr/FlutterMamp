@@ -67,14 +67,17 @@ class ConfigService {
           ? '/usr/bin/openssl'
           : (env.opensslBinary ?? '/usr/bin/openssl');
 
+  /// Ensure the site's leaf cert exists and return the **CA** cert path — that
+  /// is the certificate to trust in the keychain (trusting the CA covers every
+  /// site signed by it).
   Future<String?> ensureCert(Site site, MampEnvironment env) async {
     await _ensureDirs();
-    final cert = await _certService.ensureCert(
+    await _certService.ensureCert(
       commonName: site.host,
       opensslPath: _opensslPath(env),
       outDir: certsDir,
     );
-    return cert.certPath;
+    return _certService.caCertPath(certsDir);
   }
 
   Future<SiteLaunch> prepare(Site site, MampEnvironment env) async {
