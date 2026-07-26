@@ -415,7 +415,9 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       ubuntu-22.04 via GitHub Actions (build-linux-runtime.yml) and published.
       GitHub Actions had to be enabled on the repo first (was off).
 - [ ] Windows nginx/memcached still optional (sites serve via FrankenPHP).
-- [ ] App builds (`flutter build linux` / `windows`) need CI. macOS app done.
+- [x] **App builds DONE**: build-app.yml builds OricMamp for Linux + Windows on
+      CI and publishes to the `app-v1` release (OricMamp-linux-x64.tar.gz,
+      OricMamp-windows-x64.zip). macOS built locally. All 3 OSes downloadable.
 - [ ] All CI is blocked on ONE manual step: add the workflow file via github.com
       (token lacks `workflow` scope).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
