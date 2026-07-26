@@ -121,10 +121,11 @@ class _SiteDetailState extends State<SiteDetail> {
 
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _header(theme, site),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _header(theme, site),
           const SizedBox(height: 20),
           _label('Site Name'),
           TextField(
@@ -290,8 +291,9 @@ class _SiteDetailState extends State<SiteDetail> {
             ],
           ),
           const SizedBox(height: 8),
-          Expanded(child: LogPanel(lines: site.logLines)),
-        ],
+          SizedBox(height: 320, child: LogPanel(lines: site.logLines)),
+          ],
+        ),
       ),
     );
   }
