@@ -76,8 +76,8 @@ pkg(){
       upload tools tools $( [ -d "$STAGE/etc" ] && echo etc ) ;;
     mysql)
       mkdir -p "$STAGE/src"
-      log "downloading MySQL linux tarball (~500MB)…"
-      dl "$STAGE/src/mysql.tar.xz" "https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.6-linux-glibc2.28-$ARCH.tar.xz"
+      log "downloading MySQL linux MINIMAL tarball (pre-stripped)…"
+      dl "$STAGE/src/mysql.tar.xz" "https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.6-linux-glibc2.28-$ARCH-minimal.tar.xz"
       mkdir -p "$STAGE/mysql"; tar xJf "$STAGE/src/mysql.tar.xz" -C "$STAGE/mysql" --strip-components=1
       # slim (same policy as macOS)
       ( cd "$STAGE/mysql/bin"; ls | grep -vxE 'mysqld|mysql|mysqladmin|mysqldump|my_print_defaults' | xargs -I{} rm -f {} 2>/dev/null || true )

@@ -131,7 +131,9 @@ class ConfigService {
     final nginx = _runtimeService.nginxBinary;
     final phpFpm = _runtimeService.phpFpmBinary;
     if (nginx == null || phpFpm == null) {
-      throw StateError('Bundled Nginx/php-fpm not installed in runtime.');
+      // No bundled nginx (e.g. Linux, where nginx needs a CI build): serve via
+      // FrankenPHP, which embeds its own PHP — a single cross-platform binary.
+      return _frankenPhpSteps(site);
     }
 
     final fcgi = _fcgiPort(site);
@@ -232,6 +234,26 @@ $sslListen
 
     // php-fpm first, then nginx (which the repository treats as the server).
     return SiteLaunch([phpFpmSpec, nginxSpec]);
+  }
+
+  // --- FrankenPHP (single binary, embedded PHP) — cross-platform fallback -----
+  Future<SiteLaunch> _frankenPhpSteps(Site site) async {
+    final fp = _runtimeService.frankenphpBinary;
+    if (fp == null) {
+      throw StateError(
+          'No web server installed (need Nginx+php-fpm or FrankenPHP).');
+    }
+    return SiteLaunch([
+      LaunchSpec(
+        executable: fp,
+        arguments: [
+          'php-server',
+          '-r', site.documentRoot,
+          '-l', '127.0.0.1:${site.port}',
+        ],
+        workingDirectory: site.documentRoot,
+      ),
+    ]);
   }
 
   // --- Apache (still MAMP: httpd + php-cgi) --------------------------------
