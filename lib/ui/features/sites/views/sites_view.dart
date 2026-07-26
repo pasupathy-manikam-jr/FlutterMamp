@@ -70,8 +70,8 @@ class _Toolbar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Image.asset('assets/images/oriclab_logo.png',
-              width: 24, height: 24),
+          Image.asset('assets/images/oriclab_mark.png',
+              width: 26, height: 26),
           const SizedBox(width: 10),
           Text('OricMamp',
               style: theme.textTheme.titleMedium
