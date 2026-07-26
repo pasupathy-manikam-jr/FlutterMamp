@@ -14,10 +14,14 @@ class ComponentState {
 /// Drives the first-launch "download runtime" prompt: checks which components
 /// are present and downloads the missing ones on demand.
 class RuntimeSetupViewModel extends ChangeNotifier {
-  RuntimeSetupViewModel({required RuntimeInstaller installer})
+  RuntimeSetupViewModel({required RuntimeInstaller installer, this.onInstalled})
       : _installer = installer;
 
   final RuntimeInstaller _installer;
+
+  /// Called after a component finishes installing, so the rest of the app can
+  /// re-check availability (e.g. the Services list) without an app restart.
+  final VoidCallback? onInstalled;
 
   final List<ComponentState> states = [];
   bool _checked = false;
@@ -65,6 +69,7 @@ class RuntimeSetupViewModel extends ChangeNotifier {
       s.progress = null;
       s.installed = _installer.isInstalled(s.component);
       notifyListeners();
+      if (s.installed) onInstalled?.call();
     }
     _downloading = false;
     notifyListeners();

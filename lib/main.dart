@@ -61,9 +61,13 @@ Future<void> main() async {
   final servicesViewModel =
       ServicesViewModel(repository: serviceRepository)..load();
 
-  // First-launch runtime download prompt.
-  final runtimeSetup =
-      RuntimeSetupViewModel(installer: RuntimeInstaller(paths: paths));
+  // First-launch runtime download prompt. When a component finishes installing,
+  // re-check the Services list so newly downloaded binaries become startable
+  // without an app restart.
+  final runtimeSetup = RuntimeSetupViewModel(
+    installer: RuntimeInstaller(paths: paths),
+    onInstalled: servicesViewModel.refresh,
+  );
 
   runApp(OricDevServerApp(
     sitesViewModel: sitesViewModel,

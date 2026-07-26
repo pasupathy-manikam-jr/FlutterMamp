@@ -29,6 +29,10 @@ class ServicesViewModel extends ChangeNotifier {
 
   List<ManagedService> get services => _repository.services;
 
+  /// Re-check which services are installed (after a runtime download), so newly
+  /// downloaded binaries become startable without an app restart.
+  void refresh() => _repository.refreshAvailability();
+
   Future<void> toggle(ServiceType type) async {
     final s = _repository.service(type);
     if (s == null || !s.available) return;

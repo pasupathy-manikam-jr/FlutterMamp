@@ -88,6 +88,17 @@ class ServiceRepository {
     _notify();
   }
 
+  /// Re-check binary availability (e.g. after an on-demand runtime download)
+  /// without disturbing services that are already running.
+  void refreshAvailability() {
+    for (var i = 0; i < _services.length; i++) {
+      final s = _services[i];
+      final avail = _runtimeService.binaryFor(s.type) != null;
+      if (avail != s.available) _services[i] = s.copyWith(available: avail);
+    }
+    _notify();
+  }
+
   Future<void> start(ServiceType type) async {
     final current = service(type);
     if (current == null ||
