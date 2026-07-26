@@ -55,7 +55,9 @@ class CertService {
     final sign = await Process.run(opensslPath, [
       'x509', '-req', '-in', csrPath,
       '-CA', ca.cert, '-CAkey', ca.key, '-CAcreateserial',
-      '-out', certPath, '-days', '825', '-sha256',
+      // macOS Safari/Chrome reject server certs valid > 398 days, even from a
+      // trusted CA — so keep leaf certs under that limit.
+      '-out', certPath, '-days', '397', '-sha256',
       '-extfile', extPath,
     ]);
     if (sign.exitCode != 0) {
