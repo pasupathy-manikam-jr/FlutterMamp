@@ -359,3 +359,18 @@ cp4 runs entirely on OricMamp's own stack — Nginx/Apache + php-fpm + MySQL (fu
 data) + Redis — with working trusted HTTPS. MAMP PRO no longer needed for it.
 Known false-positive: the Trust Certificate button can report "could not trust"
 even when the CA was trusted (osascript exit-code quirk) — harden later.
+
+### Post-migration fixes & features
+- [x] Fixed nginx **duplicate `daemon` directive** (conf sets `daemon off;`; dropped
+      the redundant `-g 'daemon off;'`).
+- [x] **Rebuilt Nginx with `--with-http_ssl_module`** (OpenSSL 3.0.15 statically
+      compiled from source) so HTTPS works on Nginx too — still MAMP-free.
+- [x] **Per-site php.ini editing**: PHP Configuration field on each site; applied
+      to php-fpm via `-c` (nginx) and php-cgi via additive `-d` flags (Apache).
+
+### Open / next
+- [ ] Nginx `client_max_body_size` knob (large uploads need it alongside php.ini).
+- [ ] Harden Trust Certificate button (verify trust status vs. osascript exit code).
+- [ ] Auto-start MySQL when opening phpMyAdmin/Adminer.
+- [ ] Bundle Apache for full independence (Nginx already is); or drop Apache.
+- [ ] In-app "download runtime" so a fresh install fetches its own binaries.
