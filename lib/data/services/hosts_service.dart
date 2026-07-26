@@ -10,7 +10,11 @@ import 'dart:io';
 class HostsService {
   const HostsService();
 
-  static const String _hostsPath = '/etc/hosts';
+  static String get _hostsPath => Platform.isWindows
+      ? '${Platform.environment['SystemRoot'] ?? r'C:\Windows'}\\System32\\drivers\\etc\\hosts'
+      : '/etc/hosts';
+
+  // Kept as-is so existing macOS /etc/hosts entries stay recognised.
   static const String _marker = '# FlutterMamp';
 
   /// True if [hostname] already has one of our entries.
@@ -59,14 +63,30 @@ class HostsService {
   /// file body.
   Future<bool> _writeViaAdmin(String content) async {
     final tmp = File(
-        '${Directory.systemTemp.path}/fluttermamp-hosts-${DateTime.now().microsecondsSinceEpoch}');
+        '${Directory.systemTemp.path}/oricmamp-hosts-${DateTime.now().microsecondsSinceEpoch}');
     await tmp.writeAsString(content);
-    final script =
-        'do shell script "cp \'${tmp.path}\' /etc/hosts" with administrator privileges';
-    final result = await Process.run('osascript', ['-e', script]);
     try {
-      await tmp.delete();
-    } catch (_) {}
-    return result.exitCode == 0;
+      if (Platform.isMacOS) {
+        final script =
+            'do shell script "cp \'${tmp.path}\' $_hostsPath" with administrator privileges';
+        final r = await Process.run('osascript', ['-e', script]);
+        return r.exitCode == 0;
+      } else if (Platform.isWindows) {
+        final r = await Process.run('powershell', [
+          '-Command',
+          "Start-Process powershell -ArgumentList '-Command',"
+              "'Copy-Item ""${tmp.path}"" ""$_hostsPath"" -Force' -Verb RunAs -Wait"
+        ]);
+        return r.exitCode == 0;
+      } else {
+        final r = await Process.run(
+            'pkexec', ['cp', tmp.path, _hostsPath]);
+        return r.exitCode == 0;
+      }
+    } finally {
+      try {
+        await tmp.delete();
+      } catch (_) {}
+    }
   }
 }

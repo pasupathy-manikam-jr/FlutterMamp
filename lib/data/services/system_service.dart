@@ -1,64 +1,142 @@
 import 'dart:io';
 
-/// Thin wrapper around macOS system integration points we need.
+/// System integration (open URLs, native file/folder pickers, trust certs)
+/// implemented with each platform's native tools — **no plugins**, so the
+/// macOS build stays CocoaPods-free.
 ///
-/// Kept as a service (not a plugin) so the app stays free of native plugin
-/// dependencies — and therefore free of a CocoaPods requirement.
+/// macOS paths are the original, tested implementations. Linux (xdg-open /
+/// zenity / pkexec) and Windows (start / PowerShell / certutil) are best-effort
+/// and will be hardened during per-OS testing (Phase 3).
 class SystemService {
-  /// Open [url] in the user's default browser via the macOS `open` command.
+  const SystemService();
+
+  /// Open [url] in the default browser.
   Future<void> openUrl(String url) async {
-    await Process.run('open', [url]);
+    if (Platform.isMacOS) {
+      await Process.run('open', [url]);
+    } else if (Platform.isWindows) {
+      await Process.run('cmd', ['/c', 'start', '', url]);
+    } else {
+      await Process.run('xdg-open', [url]);
+    }
   }
 
-  /// Reveal a path in Finder.
+  /// Reveal a path in the OS file manager.
   Future<void> revealInFinder(String path) async {
-    await Process.run('open', ['-R', path]);
+    if (Platform.isMacOS) {
+      await Process.run('open', ['-R', path]);
+    } else if (Platform.isWindows) {
+      await Process.run('explorer', ['/select,', path]);
+    } else {
+      // Open the containing directory.
+      final dir = FileSystemEntity.isDirectorySync(path)
+          ? path
+          : File(path).parent.path;
+      await Process.run('xdg-open', [dir]);
+    }
   }
 
-  /// Show a native macOS "choose folder" dialog and return the selected path,
-  /// or null if the user cancels. Uses `osascript` so we need no file-picker
-  /// plugin (and therefore no CocoaPods).
-  Future<String?> chooseFolder({
-    String prompt = 'Select the document root',
-  }) async {
-    final escaped = prompt.replaceAll('"', r'\"');
-    final result = await Process.run('osascript', [
-      '-e',
-      'POSIX path of (choose folder with prompt "$escaped")',
+  /// Native "choose folder" dialog; returns the path or null if cancelled.
+  Future<String?> chooseFolder({String prompt = 'Select a folder'}) async {
+    if (Platform.isMacOS) {
+      return _osascriptPath(
+          'POSIX path of (choose folder with prompt "${_esc(prompt)}")');
+    }
+    if (Platform.isWindows) {
+      return _powershellPath('''
+Add-Type -AssemblyName System.Windows.Forms
+\$d = New-Object System.Windows.Forms.FolderBrowserDialog
+\$d.Description = "${_esc(prompt)}"
+if (\$d.ShowDialog() -eq "OK") { \$d.SelectedPath }
+''');
+    }
+    return _stdoutPath('zenity', [
+      '--file-selection',
+      '--directory',
+      '--title=$prompt',
     ]);
-    if (result.exitCode != 0) return null; // user cancelled (osascript -128)
-    final path = (result.stdout as String).trim();
+  }
+
+  /// Native "choose file" dialog; returns the path or null if cancelled.
+  Future<String?> chooseFile({String prompt = 'Select a file'}) async {
+    if (Platform.isMacOS) {
+      return _osascriptPath(
+          'POSIX path of (choose file with prompt "${_esc(prompt)}")');
+    }
+    if (Platform.isWindows) {
+      return _powershellPath('''
+Add-Type -AssemblyName System.Windows.Forms
+\$d = New-Object System.Windows.Forms.OpenFileDialog
+\$d.Title = "${_esc(prompt)}"
+if (\$d.ShowDialog() -eq "OK") { \$d.FileName }
+''');
+    }
+    return _stdoutPath('zenity', ['--file-selection', '--title=$prompt']);
+  }
+
+  /// Trust a CA certificate at the OS level (requires elevation).
+  Future<bool> trustCertificate(String certPath) async {
+    if (Platform.isMacOS) {
+      final script = 'do shell script '
+          '"security add-trusted-cert -d -r trustRoot '
+          "-k /Library/Keychains/System.keychain '$certPath'\" "
+          'with administrator privileges';
+      final r = await Process.run('osascript', ['-e', script]);
+      return r.exitCode == 0;
+    }
+    if (Platform.isWindows) {
+      // certutil -addstore Root needs admin; relaunch elevated via PowerShell.
+      final r = await Process.run('powershell', [
+        '-Command',
+        "Start-Process certutil -ArgumentList '-addstore','Root','$certPath' "
+            "-Verb RunAs -Wait"
+      ]);
+      return r.exitCode == 0;
+    }
+    // Linux (Debian/Ubuntu system store). Browsers using NSS may need separate
+    // trust — revisit in Phase 3.
+    final name = 'oricmamp-ca.crt';
+    final r = await Process.run('pkexec', [
+      'sh',
+      '-c',
+      'cp "$certPath" /usr/local/share/ca-certificates/$name && update-ca-certificates',
+    ]);
+    return r.exitCode == 0;
+  }
+
+  // --- helpers -------------------------------------------------------------
+
+  String _esc(String s) => s.replaceAll('"', r'\"');
+
+  Future<String?> _osascriptPath(String appleScript) async {
+    final r = await Process.run('osascript', ['-e', appleScript]);
+    if (r.exitCode != 0) return null;
+    final path = (r.stdout as String).trim();
     if (path.isEmpty) return null;
-    // Strip any trailing slash for consistency.
     return path.endsWith('/') && path.length > 1
         ? path.substring(0, path.length - 1)
         : path;
   }
 
-  /// Show a native "choose file" dialog and return the selected path, or null
-  /// if cancelled. Plugin-free (osascript).
-  Future<String?> chooseFile({String prompt = 'Select a file'}) async {
-    final escaped = prompt.replaceAll('"', r'\"');
-    final result = await Process.run('osascript', [
-      '-e',
-      'POSIX path of (choose file with prompt "$escaped")',
-    ]);
-    if (result.exitCode != 0) return null;
-    final path = (result.stdout as String).trim();
-    return path.isEmpty ? null : path;
+  Future<String?> _stdoutPath(String exe, List<String> args) async {
+    try {
+      final r = await Process.run(exe, args);
+      if (r.exitCode != 0) return null;
+      final path = (r.stdout as String).trim();
+      return path.isEmpty ? null : path;
+    } catch (_) {
+      return null; // tool not installed
+    }
   }
 
-  /// Add [certPath] to the System keychain as a trusted root so browsers accept
-  /// the self-signed certificate (the "green padlock"). Requires admin, so it
-  /// goes through the native `osascript … with administrator privileges` prompt.
-  /// Returns true on success (or if the user completes the prompt).
-  Future<bool> trustCertificate(String certPath) async {
-    final script = 'do shell script '
-        '"security add-trusted-cert -d -r trustRoot '
-        "-k /Library/Keychains/System.keychain '$certPath'\" "
-        'with administrator privileges';
-    final result = await Process.run('osascript', ['-e', script]);
-    return result.exitCode == 0;
+  Future<String?> _powershellPath(String script) async {
+    try {
+      final r = await Process.run('powershell', ['-NoProfile', '-Command', script]);
+      if (r.exitCode != 0) return null;
+      final path = (r.stdout as String).trim();
+      return path.isEmpty ? null : path;
+    } catch (_) {
+      return null;
+    }
   }
 }
-
