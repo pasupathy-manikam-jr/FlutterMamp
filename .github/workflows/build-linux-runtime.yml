@@ -1,0 +1,70 @@
+name: Build Linux runtime
+
+# Builds the Linux runtime components that need a compiler (nginx, redis,
+# memcached) and uploads them to the `runtime-v1` release. The download-only
+# components (php, mailpit, frankenphp, mysql, tools) are published by
+# scripts/package-runtime-linux.sh from a workstation.
+#
+# Run it from the Actions tab (Run workflow), or:
+#   gh workflow run build-linux-runtime.yml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # Older glibc → binaries run on a wider range of Linux distros.
+    runs-on: ubuntu-22.04
+    env:
+      PLATFORM: linux-x64
+      TAG: runtime-v1
+    steps:
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential wget tar patchelf \
+            libpcre2-dev zlib1g-dev libssl-dev libevent-dev
+
+      - name: Build Redis
+        run: |
+          wget -q https://download.redis.io/redis-stable.tar.gz
+          tar xzf redis-stable.tar.gz && cd redis-stable
+          make -j"$(nproc)" BUILD_TLS=no
+          mkdir -p out/bin && cp src/redis-server src/redis-cli out/bin/
+          tar czf "$GITHUB_WORKSPACE/${PLATFORM}-redis.tar.gz" -C out bin
+
+      - name: Build Memcached (bundle libevent via $ORIGIN rpath)
+        run: |
+          wget -q https://www.memcached.org/files/memcached-1.6.38.tar.gz
+          tar xzf memcached-1.6.38.tar.gz && cd memcached-1.6.38
+          ./configure >/dev/null && make -j"$(nproc)"
+          mkdir -p out/bin out/deps/lib
+          cp memcached out/bin/
+          for lib in $(ldd memcached | awk '/libevent/{print $3}'); do cp "$lib" out/deps/lib/; done
+          patchelf --set-rpath '$ORIGIN/../deps/lib' out/bin/memcached
+          tar czf "$GITHUB_WORKSPACE/${PLATFORM}-memcached.tar.gz" -C out bin deps
+
+      - name: Build Nginx (static pcre2 + openssl)
+        run: |
+          wget -q https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.gz && tar xzf pcre2-10.44.tar.gz
+          wget -q https://github.com/openssl/openssl/releases/download/openssl-3.0.15/openssl-3.0.15.tar.gz && tar xzf openssl-3.0.15.tar.gz
+          wget -q https://nginx.org/download/nginx-1.27.4.tar.gz && tar xzf nginx-1.27.4.tar.gz && cd nginx-1.27.4
+          ./configure --prefix="$PWD/out/nginx" \
+            --with-http_ssl_module \
+            --with-openssl="$GITHUB_WORKSPACE/openssl-3.0.15" \
+            --with-pcre="$GITHUB_WORKSPACE/pcre2-10.44"
+          make -j"$(nproc)" && make install
+          tar czf "$GITHUB_WORKSPACE/${PLATFORM}-nginx.tar.gz" -C out nginx
+
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG" \
+            "${PLATFORM}-redis.tar.gz" \
+            "${PLATFORM}-memcached.tar.gz" \
+            "${PLATFORM}-nginx.tar.gz" \
+            --clobber --repo "${{ github.repository }}"
