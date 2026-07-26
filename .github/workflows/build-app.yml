@@ -1,0 +1,75 @@
+name: Build OricMamp app
+
+# Builds the OricMamp desktop app for Linux and Windows on GitHub's machines
+# (you can't cross-build these from macOS) and publishes downloadable archives to
+# the `app-v1` release. macOS is built locally.
+#
+# Run it from the Actions tab (Run workflow) after the workflow file is added.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux
+          - os: windows-latest
+            target: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Linux build deps
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev
+
+      - name: Enable desktop + fetch packages
+        run: |
+          flutter config --enable-linux-desktop --enable-windows-desktop
+          flutter pub get
+
+      - name: Build ${{ matrix.target }}
+        run: flutter build ${{ matrix.target }} --release
+
+      - name: Package (Linux)
+        if: matrix.target == 'linux'
+        run: |
+          tar czf "$GITHUB_WORKSPACE/OricMamp-linux-x64.tar.gz" \
+            -C build/linux/x64/release/bundle .
+
+      - name: Package (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* `
+            -DestinationPath OricMamp-windows-x64.zip -Force
+
+      - name: Publish to app-v1 release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release create app-v1 --repo "$REPO" \
+            --title "OricMamp app" \
+            --notes "Downloadable OricMamp desktop app (Linux/Windows). macOS is built locally." \
+            || true
+          if [ "${{ matrix.target }}" = "linux" ]; then
+            gh release upload app-v1 OricMamp-linux-x64.tar.gz --clobber --repo "$REPO"
+          else
+            gh release upload app-v1 OricMamp-windows-x64.zip --clobber --repo "$REPO"
+          fi
