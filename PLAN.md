@@ -1,4 +1,4 @@
-# FlutterMamp — Local Web Server Manager for macOS
+# OricDevServer — Local Web Server Manager for macOS
 
 A MAMP PRO–style desktop app built with Flutter, managing traditional web servers
 (Apache, Nginx) **and** modern PHP application servers (FrankenPHP, RoadRunner, Swoole).
@@ -149,7 +149,7 @@ privileged helper via `launchd`. Plan:
 - **Process control**: `dart:io` `Process.start`.
 - **Native glue**: Swift via `MethodChannel` (privileged helper, macOS niceties).
 - **Config templating**: plain Dart string templates (mustache-style) per strategy.
-- **Persistence**: JSON config file in `~/Library/Application Support/FlutterMamp/`.
+- **Persistence**: JSON config file in `~/Library/Application Support/OricDevServer/`.
 - **Packaging (later)**: `flutter build macos` → codesign → notarize → DMG.
 
 ---
@@ -212,7 +212,7 @@ privileged helper via `launchd`. Plan:
 - [ ] Bundle binaries eventually, or stay Homebrew-managed permanently?
 - [ ] Which PHP versions to support, and how (Homebrew formulae vs. static builds)?
 - [ ] MySQL/MariaDB + phpMyAdmin — in scope for v1 or a later milestone?
-- [ ] Reuse this `FlutterMamp` directory (wipe Android scaffold) or start clean?
+- [ ] Reuse this `OricDevServer` directory (wipe Android scaffold) or start clean?
 
 ---
 
@@ -252,7 +252,7 @@ lib/
   foreground `nginx.conf`; Apache = generated foreground `httpd.conf` (`-X`). All
   run in the foreground and are stopped by killing the pid.
 - **Ports** default to 8000/8001/8002 to avoid clashing with running MAMP PRO.
-- **Config output** goes to `~/Library/Application Support/FlutterMamp/` — never
+- **Config output** goes to `~/Library/Application Support/OricDevServer/` — never
   touches MAMP PRO's own config.
 - **Verified:** `flutter analyze` clean; domain unit tests pass. Not yet run (Xcode).
 
@@ -293,9 +293,9 @@ lib/
     keychain as a trusted root (`security add-trusted-cert` via admin prompt) for
     a real green padlock, mirroring MAMP.
   - Committed & pushed the app to the private repo (no co-author trailer).
-  - **Direction change → independence from MAMP.** Goal: FlutterMamp manages its
+  - **Direction change → independence from MAMP.** Goal: OricDevServer manages its
     OWN binaries (bundle/download/build) and eventually MAMP PRO is removed.
-    - New `runtime/` dir (`~/Library/Application Support/FlutterMamp/runtime/bin`)
+    - New `runtime/` dir (`~/Library/Application Support/OricDevServer/runtime/bin`)
       holds our own binaries — **Redis 8.8.1** (built from source, arm64) and
       **MailHog** (downloaded) so far. `RuntimeService` discovers them (never MAMP).
     - Added global **Services** feature (like MAMP PRO's Server tab): `ServiceType`
@@ -352,10 +352,10 @@ lib/
 - [x] **Copyable log panel** (SelectionArea + Copy button).
 - [x] Suppressed phpMyAdmin PHP 8.5 deprecation noise (tools php.ini via
       PHP_INI_SCAN_DIR).
-- [x] **Renamed app FlutterMamp → OricMamp** (toolbar, window title, PRODUCT_NAME).
+- [x] **Renamed app OricDevServer → OricDevServer** (toolbar, window title, PRODUCT_NAME).
 
 ### cp4 migration: COMPLETE
-cp4 runs entirely on OricMamp's own stack — Nginx/Apache + php-fpm + MySQL (full
+cp4 runs entirely on OricDevServer's own stack — Nginx/Apache + php-fpm + MySQL (full
 data) + Redis — with working trusted HTTPS. MAMP PRO no longer needed for it.
 Known false-positive: the Trust Certificate button can report "could not trust"
 even when the CA was trusted (osascript exit-code quirk) — harden later.
@@ -372,7 +372,7 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - [x] **OricLab logo** in the top-left toolbar + as the **macOS app icon**
       (cropped to the blue mark — `oriclab_mark.png` — since the source file had a
       white wordmark + empty space that rendered near-invisible).
-- [x] **Standalone release app**: `flutter build macos --release` → `OricMamp.app`
+- [x] **Standalone release app**: `flutter build macos --release` → `OricDevServer.app`
       installed to `/Applications` (launch from Finder/Launchpad, no IDE).
 - [x] Fixed RenderFlex overflow (detail pane scrolls on small windows).
 
@@ -417,9 +417,9 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - [x] **Windows runtime COMPLETE (8/8)**: added php (Windows CLI, no php-fpm
       SAPI — probes bin/php), nginx (nginx.org win), memcached (jefyt mingw +
       DLLs). All three OSes now 8/8.
-- [x] **App builds DONE (all 3 OSes on CI)**: build-app.yml builds OricMamp for
+- [x] **App builds DONE (all 3 OSes on CI)**: build-app.yml builds OricDevServer for
       Linux, Windows, AND macOS (ad-hoc signed) and publishes to `app-v1`
-      (OricMamp-linux-x64.tar.gz / -windows-x64.zip / -macos.zip).
+      (OricDevServer-linux-x64.tar.gz / -windows-x64.zip / -macos.zip).
 - [ ] All CI is blocked on ONE manual step: add the workflow file via github.com
       (token lacks `workflow` scope).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
@@ -434,3 +434,12 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - [ ] Auto-start MySQL when opening phpMyAdmin/Adminer.
 - [ ] Bundle Apache for full independence (Nginx already is); or drop Apache.
 - [ ] In-app "download runtime" so a fresh install fetches its own binaries.
+
+## Rebrand (2026-07-26)
+- Renamed OricMamp/FlutterMamp -> **OricDevServer** to drop the MAMP trademark
+  from the product name (legal risk). GitHub repo renamed to OricDevServer
+  (old URLs auto-redirect). README has a trademark disclaimer.
+- Kept hidden macOS data/runtime paths (Application Support/FlutterMamp,
+  ~/.fluttermamp) for data continuity.
+- TODO: re-run app-build after pasting the updated build-app.yml (asset names +
+  macOS app now OricDevServer) to publish rebranded downloads.
