@@ -398,7 +398,16 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       (verified portable). All 8 macOS-arm64 components published (~162 MB total).
       MySQL slimmed 636MB→183MB (51MB compressed): dropped mysqld-debug, mecab,
       static libs, unused tools; verified boots.
-- [ ] **Source Linux/Windows binaries** (decide Windows Redis/Memcached: Memurai/port).
+- [x] **Linux runtime (5/8 published, 153 MB)**: php, mailpit, frankenphp, mysql
+      (minimal tarball → 61 MB), tools via `scripts/package-runtime-linux.sh`.
+- [x] **FrankenPHP site fallback**: where nginx isn't bundled (Linux), sites serve
+      via FrankenPHP's embedded PHP (single binary) — Linux sites work now.
+- [ ] Linux nginx/redis/memcached need a Linux compile: workflow written
+      (`.github/workflows/build-linux-runtime.yml`) but **can't be pushed — git
+      token lacks `workflow` scope**. Grant it, then push + trigger.
+- [ ] **Build the Linux app binary** itself (`flutter build linux`) needs a Linux
+      machine → GitHub Actions (also needs workflow scope).
+- [ ] **Source Windows binaries** (decide Windows Redis/Memcached: Memurai/port).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
       lazy per-service download.
 - [ ] **GitHub Actions CI** to build macOS + Windows + Linux artifacts.
