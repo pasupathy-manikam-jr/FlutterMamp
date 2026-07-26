@@ -443,3 +443,10 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
   ~/.fluttermamp) for data continuity.
 - TODO: re-run app-build after pasting the updated build-app.yml (asset names +
   macOS app now OricDevServer) to publish rebranded downloads.
+
+## Apache bundled (2026-07-26)
+- Apache is now a runtime component (MAMP-free): bundled httpd + php-fpm via
+  mod_proxy_fcgi. ConfigService._apacheSteps rewritten; falls back to FrankenPHP.
+- macOS: macos-arm64-apache.tar.gz published (relocated + ad-hoc re-signed,
+  verified standalone). 9/9 on macOS.
+- TODO: Windows Apache (Apache Lounge courier) + Linux Apache (CI build).
