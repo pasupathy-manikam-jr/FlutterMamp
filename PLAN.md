@@ -414,7 +414,9 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - [x] **Linux runtime COMPLETE (8/8)**: nginx/redis/memcached built on
       ubuntu-22.04 via GitHub Actions (build-linux-runtime.yml) and published.
       GitHub Actions had to be enabled on the repo first (was off).
-- [ ] Windows nginx/memcached still optional (sites serve via FrankenPHP).
+- [x] **Windows runtime COMPLETE (8/8)**: added php (Windows CLI, no php-fpm
+      SAPI — probes bin/php), nginx (nginx.org win), memcached (jefyt mingw +
+      DLLs). All three OSes now 8/8.
 - [x] **App builds DONE (all 3 OSes on CI)**: build-app.yml builds OricMamp for
       Linux, Windows, AND macOS (ad-hoc signed) and publishes to `app-v1`
       (OricMamp-linux-x64.tar.gz / -windows-x64.zip / -macos.zip).
