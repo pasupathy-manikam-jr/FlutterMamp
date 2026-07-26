@@ -129,7 +129,7 @@ class _ImportDbDialogState extends State<_ImportDbDialog> {
             _label('Database'),
             TextField(
                 controller: _db,
-                decoration: _dec(hint: 'e.g. aimsfx_db3')),
+                decoration: _dec(hint: 'your database name')),
             const SizedBox(height: 12),
             Row(
               children: [

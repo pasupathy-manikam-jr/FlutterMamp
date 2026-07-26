@@ -36,7 +36,7 @@ class Site {
   /// Plain HTTP port.
   final int port;
 
-  /// Optional custom hostname (e.g. `cp4.local`). Empty → served on 127.0.0.1.
+  /// Optional custom hostname (e.g. `myapp.local`). Empty → served on 127.0.0.1.
   /// When set, a `127.0.0.1 <hostname>` entry is added to /etc/hosts on start.
   final String hostname;
 
