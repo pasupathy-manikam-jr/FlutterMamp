@@ -1,9 +1,9 @@
 # OricDevServer
 
 A cross-platform local web-development server manager for **macOS, Linux, and
-Windows** — a self-contained, open alternative to MAMP PRO-style tools. Manage
-local sites (Apache / Nginx / FrankenPHP), PHP, and services (MySQL, Redis,
-Memcached, Mailpit) plus DB tools (phpMyAdmin / Adminer) from one native app.
+Windows**. Run and manage local development sites (Apache / Nginx / FrankenPHP),
+PHP, and services (MySQL, Redis, Memcached, Mailpit) plus DB tools (phpMyAdmin /
+Adminer) from one native app — self-contained and open source.
 
 Built with Flutter. No external stack required — OricDevServer downloads and runs
 its **own** bundled runtime binaries on first launch.
@@ -30,10 +30,9 @@ Download the app for your OS from the [Releases](../../releases) page
 
 ## Trademark notice
 
-OricDevServer is an independent project and is **not affiliated with, endorsed
-by, or sponsored by appsolute GmbH**. "MAMP" and "MAMP PRO" are trademarks of
-appsolute GmbH, used here only for descriptive comparison (nominative fair use).
-All other trademarks are the property of their respective owners.
+OricDevServer is an independent, open-source project and is not affiliated with,
+endorsed by, or sponsored by any other company. All product names and trademarks
+are the property of their respective owners.
 
 ## License
 
