@@ -2,21 +2,18 @@ import 'dart:io';
 
 import '../../domain/models/managed_service.dart';
 import '../../domain/models/service_type.dart';
+import '../platform/app_paths.dart';
 import 'config_service.dart' show LaunchSpec;
 
 /// Builds the foreground launch command for a global service, using our own
 /// runtime binaries and writing data/config under the app-support directory.
 class ServiceLauncher {
-  ServiceLauncher({String? homeOverride})
-      : _home = homeOverride ??
-            Platform.environment['HOME'] ??
-            Directory.systemTemp.path;
+  ServiceLauncher({AppPaths? paths}) : _paths = paths ?? AppPaths();
 
-  final String _home;
+  final AppPaths _paths;
 
-  String get _base => '$_home/Library/Application Support/FlutterMamp';
-  String get dataDir => '$_base/data';
-  String get logDir => '$_base/logs';
+  String get dataDir => _paths.dataDir;
+  String get logDir => _paths.logDir;
 
   /// Resolve the launch command for [service] using [binaryPath].
   Future<LaunchSpec> prepare(ManagedService service, String binaryPath) async {

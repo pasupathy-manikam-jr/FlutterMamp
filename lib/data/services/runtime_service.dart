@@ -1,24 +1,20 @@
 import 'dart:io';
 
 import '../../domain/models/service_type.dart';
+import '../platform/app_paths.dart';
 
-/// Locates FlutterMamp's OWN bundled binaries.
+/// Locates OricMamp's OWN bundled binaries.
 ///
 /// This is the independence boundary: binaries live under the app's runtime
-/// directory (downloaded/built), never `/Applications/MAMP`. As we move fully
-/// off MAMP, web-server binaries will live here too.
+/// directory (downloaded/built), never `/Applications/MAMP`.
 class RuntimeService {
-  RuntimeService({String? homeOverride})
-      : _home = homeOverride ??
-            Platform.environment['HOME'] ??
-            Directory.systemTemp.path;
+  RuntimeService({AppPaths? paths}) : _paths = paths ?? AppPaths();
 
-  final String _home;
+  final AppPaths _paths;
 
-  // A space-free path: several bundled tools are built with autotools/make,
-  // which mishandle spaces (as in "Application Support"). Runtime data that is
-  // only *used* at run time (datadirs) can still live under Application Support.
-  String get root => '$_home/.fluttermamp/runtime';
+  // Space-free runtime root (see AppPaths). Internal joins use '/', which Dart
+  // accepts on Windows too.
+  String get root => _paths.runtimeDir;
   String get binDir => '$root/bin';
 
   /// Absolute path to the service's binary, or null if not installed yet.

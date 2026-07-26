@@ -3,19 +3,16 @@ import 'dart:io';
 
 import '../../domain/models/php_version.dart';
 import '../../domain/models/site.dart';
+import '../platform/app_paths.dart';
 
 /// Reads and writes the list of sites to a JSON file under the app-support
 /// directory. Stateless wrapper around the filesystem.
 class SettingsService {
-  SettingsService({String? homeOverride})
-      : _home = homeOverride ??
-            Platform.environment['HOME'] ??
-            Directory.systemTemp.path;
+  SettingsService({AppPaths? paths}) : _paths = paths ?? AppPaths();
 
-  final String _home;
+  final AppPaths _paths;
 
-  String get _filePath =>
-      '$_home/Library/Application Support/FlutterMamp/sites.json';
+  String get _filePath => _paths.sitesFile;
 
   /// Load persisted sites. [resolvePhp] maps a stored PHP binary path back to a
   /// discovered [PhpVersion]. Returns an empty list when no file exists or it

@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'data/platform/app_paths.dart';
 import 'data/repositories/service_repository.dart';
 import 'data/repositories/site_repository.dart';
 import 'data/services/config_service.dart';
@@ -28,17 +29,19 @@ Future<void> main() async {
 
   // Composition root: build the dependency graph once, bottom-up, and inject
   // via constructors (per the Flutter architecture skill — no service locator).
+  final paths = AppPaths();
   final processService = ServerProcessService();
-  final runtimeService = RuntimeService();
+  final runtimeService = RuntimeService(paths: paths);
   final systemService = SystemService();
 
   // Sites: Nginx sites run on our own runtime (nginx + php-fpm); Apache still
   // uses MAMP for now.
   final siteRepository = SiteRepository(
     mampService: MampService(),
-    configService: ConfigService(runtimeService: runtimeService),
+    configService:
+        ConfigService(runtimeService: runtimeService, paths: paths),
     processService: processService,
-    settingsService: SettingsService(),
+    settingsService: SettingsService(paths: paths),
     systemService: systemService,
     hostsService: const HostsService(),
   );
@@ -47,7 +50,7 @@ Future<void> main() async {
   // Services (global daemons — our OWN runtime binaries, MAMP-independent).
   final serviceRepository = ServiceRepository(
     runtimeService: runtimeService,
-    serviceLauncher: ServiceLauncher(),
+    serviceLauncher: ServiceLauncher(paths: paths),
     processService: processService,
     databaseService: const DatabaseService(),
     systemService: systemService,

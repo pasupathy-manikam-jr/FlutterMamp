@@ -3,6 +3,7 @@ import 'dart:io';
 import '../../domain/models/mamp_environment.dart';
 import '../../domain/models/server_type.dart';
 import '../../domain/models/site.dart';
+import '../platform/app_paths.dart';
 import 'cert_service.dart';
 import 'runtime_service.dart';
 
@@ -37,21 +38,19 @@ class ConfigService {
   ConfigService({
     CertService certService = const CertService(),
     required RuntimeService runtimeService,
-    String? homeOverride,
+    AppPaths? paths,
   })  : _certService = certService,
         _runtimeService = runtimeService,
-        _home = homeOverride ??
-            Platform.environment['HOME'] ??
-            Directory.systemTemp.path;
+        _paths = paths ?? AppPaths();
 
   final CertService _certService;
   final RuntimeService _runtimeService;
-  final String _home;
+  final AppPaths _paths;
 
-  String get baseDir => '$_home/Library/Application Support/FlutterMamp';
-  String get confDir => '$baseDir/conf';
-  String get logDir => '$baseDir/logs';
-  String get certsDir => '$baseDir/certs';
+  String get baseDir => _paths.supportDir;
+  String get confDir => _paths.confDir;
+  String get logDir => _paths.logDir;
+  String get certsDir => _paths.certsDir;
 
   Future<void> _ensureDirs() async {
     for (final d in [confDir, logDir, certsDir]) {
