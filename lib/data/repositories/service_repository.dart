@@ -183,22 +183,28 @@ class ServiceRepository {
   bool isToolRunning(ToolType type) => _tools.containsKey(type);
 
   bool toolAvailable(ToolType type) =>
-      _runtimeService.frankenphpBinary != null &&
+      _runtimeService.phpCliBinary != null &&
       _runtimeService.toolRoot(type.dirName) != null;
 
   /// Start the tool's server (if not already running) and open it in a browser.
+  ///
+  /// The DB tools are plain PHP web apps, so we serve them with the bundled PHP
+  /// CLI's built-in server (`php -S`) — no separate web server needed.
   Future<void> openTool(ToolType type) async {
     if (!_tools.containsKey(type)) {
-      final fp = _runtimeService.frankenphpBinary;
+      final php = _runtimeService.phpCliBinary;
       final root = _runtimeService.toolRoot(type.dirName);
-      if (fp == null || root == null) return;
+      if (php == null || root == null) return;
       final spec = LaunchSpec(
-        executable: fp,
-        arguments: ['php-server', '-r', root, '-l', '127.0.0.1:${type.port}'],
+        executable: php,
+        arguments: ['-S', '127.0.0.1:${type.port}', '-t', root],
         workingDirectory: root,
-        // Suppress PHP 8.5 deprecation noise from tool vendor libs.
         environment: {
+          // Suppress PHP deprecation noise from tool vendor libs.
           'PHP_INI_SCAN_DIR': '${_runtimeService.root}/etc/php-tools',
+          // php -S is single-threaded by default; workers let phpMyAdmin load
+          // its assets concurrently instead of one request at a time.
+          'PHP_CLI_SERVER_WORKERS': '4',
         },
       );
       final running = await _processService.start(
