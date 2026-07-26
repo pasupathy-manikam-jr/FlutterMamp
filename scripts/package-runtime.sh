@@ -128,7 +128,17 @@ pkg() {
       [ -d "$RUNTIME/etc/php-tools" ] && stage_copy etc/php-tools
       package_and_upload tools tools $( [ -d "$STAGE/etc" ] && echo etc ) ;;
     mysql)
-      stage_copy mysql
+      # Slim: keep mysqld + core client tools + all runtime dylibs + share;
+      # drop mysqld-debug (~200M), lib/mecab (~120M), static *.a libs, and the
+      # ~30 client tools we never launch. Verified to init + boot.
+      mkdir -p "$STAGE/mysql/bin"
+      for b in mysqld mysql mysqladmin mysqldump my_print_defaults; do
+        cp "$RUNTIME/mysql/bin/$b" "$STAGE/mysql/bin/" 2>/dev/null || true
+      done
+      cp "$RUNTIME/mysql/bin/"*.dylib "$STAGE/mysql/bin/" 2>/dev/null || true
+      cp -R "$RUNTIME/mysql/lib" "$STAGE/mysql/lib"
+      rm -rf "$STAGE/mysql/lib/mecab" "$STAGE/mysql/lib/"*.a
+      cp -R "$RUNTIME/mysql/share" "$STAGE/mysql/share"
       package_and_upload mysql mysql ;;
     *) echo "unknown component: $1" ;;
   esac
