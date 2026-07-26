@@ -72,7 +72,7 @@ class _Toolbar extends StatelessWidget {
         children: [
           Icon(Icons.dns_rounded, color: theme.colorScheme.primary),
           const SizedBox(width: 10),
-          Text('FlutterMamp',
+          Text('OricMamp',
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(width: 16),

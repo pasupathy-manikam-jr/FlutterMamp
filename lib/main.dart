@@ -105,7 +105,7 @@ class _FlutterMampAppState extends State<FlutterMampApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FlutterMamp',
+      title: 'OricMamp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
