@@ -17,11 +17,15 @@ class RuntimeService {
   String get root => _paths.runtimeDir;
   String get binDir => '$root/bin';
 
-  /// Absolute path to the service's binary, or null if not installed yet.
-  String? binaryFor(ServiceType type) {
-    final path = '$root/${type.relativePath}';
-    return File(path).existsSync() ? path : null;
+  /// Resolve a binary path, tolerating a `.exe` suffix on Windows.
+  String? _bin(String path) {
+    if (File(path).existsSync()) return path;
+    if (Platform.isWindows && File('$path.exe').existsSync()) return '$path.exe';
+    return null;
   }
+
+  /// Absolute path to the service's binary, or null if not installed yet.
+  String? binaryFor(ServiceType type) => _bin('$root/${type.relativePath}');
 
   /// The directory holding [type]'s install tree (its basedir), e.g. the MySQL
   /// distribution root. Derived from the binary's relative path.
