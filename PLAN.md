@@ -392,9 +392,11 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       with progress. Verified end-to-end (Redis download+extract from release).
 
 ### Phase 2/3 (to actually run on Linux/Windows)
-- [ ] Upload the **full component set** to `runtime-v1` with **dependency
-      bundling** (memcached needs libevent; nginx needs libpcre2; php/frankenphp/
-      mysql are large) — currently only `macos-arm64-redis` is published.
+- [x] `scripts/package-runtime.sh` packages each component self-contained
+      (bundles + relocates dylib deps to @loader_path) and uploads to `runtime-v1`.
+      Published macos-arm64: redis, memcached, mailpit, nginx, php, tools
+      (verified portable). Run `scripts/package-runtime.sh frankenphp mysql` for
+      the two large ones.
 - [ ] **Source Linux/Windows binaries** (decide Windows Redis/Memcached: Memurai/port).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
       lazy per-service download.
