@@ -411,8 +411,10 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       (tporadowski), mysql (winx64, 86 MB), tools via
       `scripts/package-runtime-windows.sh`. Sites serve via FrankenPHP (no
       Windows php-fpm). RuntimeService.binaryFor is now `.exe`-aware.
-- [ ] Remaining runtime binaries need CI on real OS runners:
-      Linux nginx/redis/memcached, Windows nginx/memcached.
+- [x] **Linux runtime COMPLETE (8/8)**: nginx/redis/memcached built on
+      ubuntu-22.04 via GitHub Actions (build-linux-runtime.yml) and published.
+      GitHub Actions had to be enabled on the repo first (was off).
+- [ ] Windows nginx/memcached still optional (sites serve via FrankenPHP).
 - [ ] App builds (`flutter build linux` / `windows`) need CI. macOS app done.
 - [ ] All CI is blocked on ONE manual step: add the workflow file via github.com
       (token lacks `workflow` scope).
