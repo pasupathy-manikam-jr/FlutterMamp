@@ -50,9 +50,28 @@ class ServiceLauncher {
         final base = File(binaryPath).parent.parent.path;
         final dir = '$dataDir/mysql';
         if (!Directory('$dir/mysql').existsSync()) {
-          throw StateError(
-              'MySQL data directory is not initialised at $dir.');
+          // Fresh/empty data dir → initialise it (system tables + a passwordless
+          // root). Runs once; the --init-file below then sets root/root.
+          await Directory(dir).create(recursive: true);
+          final init = await Process.run(binaryPath, [
+            '--no-defaults',
+            '--initialize-insecure',
+            '--basedir=$base',
+            '--datadir=$dir',
+          ]);
+          if (!Directory('$dir/mysql').existsSync()) {
+            throw StateError('MySQL initialise failed: ${init.stderr}');
+          }
         }
+        // Idempotent on every start: ensure root/root works over TCP (127.0.0.1),
+        // matching the MAMP convention the app + DB tools expect.
+        final initSql = File('$dataDir/mysql-init.sql');
+        await initSql.writeAsString(
+          "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';\n"
+          "CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY 'root';\n"
+          "GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION;\n"
+          "FLUSH PRIVILEGES;\n",
+        );
         return LaunchSpec(
           executable: binaryPath,
           arguments: [
@@ -64,6 +83,7 @@ class ServiceLauncher {
             '--socket=$dataDir/mysql.sock',
             '--mysqlx=OFF',
             '--max_allowed_packet=1G',
+            '--init-file=${initSql.path}',
           ],
         );
     }
