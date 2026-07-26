@@ -52,12 +52,14 @@ class ServicesViewModel extends ChangeNotifier {
     required String database,
     String user = 'root',
     String password = 'root',
+    void Function(double fraction)? onProgress,
   }) =>
       _repository.importDump(
         dumpPath: dumpPath,
         database: database,
         user: user,
         password: password,
+        onProgress: onProgress,
       );
 
   // --- bundled web tools ---

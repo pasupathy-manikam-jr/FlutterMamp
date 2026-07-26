@@ -23,6 +23,7 @@ class DatabaseService {
     int port = 3306,
     String user = 'root',
     String password = 'root',
+    void Function(double fraction)? onProgress,
   }) async {
     if (!File(dumpPath).existsSync()) {
       return DbResult(false, 'Dump file not found: $dumpPath');
@@ -50,9 +51,18 @@ class DatabaseService {
     final err = StringBuffer();
     proc.stderr.transform(utf8.decoder).listen(err.write);
 
-    final source = dumpPath.endsWith('.gz')
-        ? File(dumpPath).openRead().transform(gzip.decoder)
-        : File(dumpPath).openRead();
+    // Count bytes read from the (compressed) file. Because piping into mysql's
+    // stdin applies backpressure, this advances at mysql's consumption rate —
+    // so it's a real progress signal, not just "bytes queued".
+    final total = await File(dumpPath).length();
+    var read = 0;
+    final counted = File(dumpPath).openRead().map((chunk) {
+      read += chunk.length;
+      if (total > 0) onProgress?.call(read / total);
+      return chunk;
+    });
+    final source =
+        dumpPath.endsWith('.gz') ? counted.transform(gzip.decoder) : counted;
     try {
       await source.pipe(proc.stdin);
     } catch (e) {

@@ -29,6 +29,8 @@ class _ImportDbDialogState extends State<_ImportDbDialog> {
   bool _busy = false;
   String? _result;
   bool _ok = false;
+  double? _progress; // 0..1 during import
+  int _lastPct = -1;
 
   @override
   void dispose() {
@@ -55,12 +57,23 @@ class _ImportDbDialogState extends State<_ImportDbDialog> {
     setState(() {
       _busy = true;
       _result = null;
+      _progress = 0;
+      _lastPct = -1;
     });
     final res = await widget.viewModel.importDump(
       dumpPath: _dumpPath!,
       database: _db.text.trim(),
       user: _user.text.trim(),
       password: _password.text,
+      onProgress: (f) {
+        final pct = (f * 100).round();
+        if (pct != _lastPct && mounted) {
+          setState(() {
+            _lastPct = pct;
+            _progress = f;
+          });
+        }
+      },
     );
     if (!mounted) return;
     setState(() {
@@ -140,14 +153,15 @@ class _ImportDbDialogState extends State<_ImportDbDialog> {
             ),
             if (_busy) ...[
               const SizedBox(height: 16),
-              Row(children: const [
-                SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2)),
-                SizedBox(width: 10),
-                Text('Importing… (large dumps can take a while)'),
-              ]),
+              LinearProgressIndicator(
+                  value: (_progress ?? 0) >= 0.999 ? null : _progress),
+              const SizedBox(height: 6),
+              Text(
+                (_progress ?? 0) >= 0.999
+                    ? 'Finalizing… (MySQL is applying the last statements)'
+                    : 'Importing… ${((_progress ?? 0) * 100).round()}%',
+                style: TextStyle(fontSize: 12, color: theme.hintColor),
+              ),
             ],
             if (_result != null) ...[
               const SizedBox(height: 12),

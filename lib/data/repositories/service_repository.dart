@@ -44,6 +44,7 @@ class ServiceRepository {
     required String database,
     String user = 'root',
     String password = 'root',
+    void Function(double fraction)? onProgress,
   }) async {
     final client = _runtimeService.mysqlClient;
     if (client == null) {
@@ -55,6 +56,7 @@ class ServiceRepository {
       database: database,
       user: user,
       password: password,
+      onProgress: onProgress,
     );
   }
 
