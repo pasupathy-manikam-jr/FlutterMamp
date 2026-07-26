@@ -376,9 +376,27 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       installed to `/Applications` (launch from Finder/Launchpad, no IDE).
 - [x] Fixed RenderFlex overflow (detail pane scrolls on small windows).
 
-### Open / next
-- [ ] Distributable build: code-sign + notarize, and **bundle the runtime** (or
-      download-on-first-launch) so the .app works on other Macs.
+### M9 — Cross-platform (Linux/macOS/Windows) — Phase 1 COMPLETE
+- [x] **1a AppPaths**: all paths cross-platform (macOS unchanged; Linux XDG;
+      Windows %APPDATA%/%LOCALAPPDATA%).
+- [x] **1b Native system ops**: SystemService + HostsService branch per OS
+      (macOS osascript/security; Linux xdg-open/zenity/pkexec; Windows
+      start/PowerShell/certutil) — no plugins, macOS unchanged.
+- [x] **1c Runtime download engine**: `RuntimeManifest` + `RuntimeInstaller`
+      download `<os>-<arch>-<id>.tar.gz` from GitHub Releases (`runtime-v1`) and
+      extract into runtimeDir. **Proven end-to-end** (Redis asset, HTTP 200).
+      Keeps the app ~40 MB.
+
+### Phase 2/3 (to actually run on Linux/Windows)
+- [ ] Upload remaining macOS components + **source Linux/Windows binaries** to the
+      `runtime-v1` release (decide Windows Redis/Memcached: Memurai/port).
+- [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
+      lazy per-service download.
+- [ ] **GitHub Actions CI** to build macOS + Windows + Linux artifacts.
+- [ ] Distributable: code-sign + notarize (macOS), per-OS packaging.
+
+### Open / next (macOS polish)
+- [ ] nginx `client_max_body_size`; harden Trust button; auto-start MySQL for tools.
 - [ ] Nginx `client_max_body_size` knob (large uploads need it alongside php.ini).
 - [ ] Harden Trust Certificate button (verify trust status vs. osascript exit code).
 - [ ] Auto-start MySQL when opening phpMyAdmin/Adminer.
