@@ -407,7 +407,15 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       token lacks `workflow` scope**. Grant it, then push + trigger.
 - [ ] **Build the Linux app binary** itself (`flutter build linux`) needs a Linux
       machine → GitHub Actions (also needs workflow scope).
-- [ ] **Source Windows binaries** (decide Windows Redis/Memcached: Memurai/port).
+- [x] **Windows runtime (5/8 published, 125 MB)**: mailpit, frankenphp, redis
+      (tporadowski), mysql (winx64, 86 MB), tools via
+      `scripts/package-runtime-windows.sh`. Sites serve via FrankenPHP (no
+      Windows php-fpm). RuntimeService.binaryFor is now `.exe`-aware.
+- [ ] Remaining runtime binaries need CI on real OS runners:
+      Linux nginx/redis/memcached, Windows nginx/memcached.
+- [ ] App builds (`flutter build linux` / `windows`) need CI. macOS app done.
+- [ ] All CI is blocked on ONE manual step: add the workflow file via github.com
+      (token lacks `workflow` scope).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
       lazy per-service download.
 - [ ] **GitHub Actions CI** to build macOS + Windows + Linux artifacts.
