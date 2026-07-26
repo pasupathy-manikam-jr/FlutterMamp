@@ -8,7 +8,7 @@ import 'data/repositories/site_repository.dart';
 import 'data/services/config_service.dart';
 import 'data/services/database_service.dart';
 import 'data/services/hosts_service.dart';
-import 'data/services/mamp_service.dart';
+import 'data/services/environment_service.dart';
 import 'data/services/process_cleanup.dart';
 import 'data/services/runtime_service.dart';
 import 'data/services/server_process_service.dart';
@@ -40,7 +40,7 @@ Future<void> main() async {
   // Sites: Nginx sites run on our own runtime (nginx + php-fpm); Apache still
   // uses MAMP for now.
   final siteRepository = SiteRepository(
-    mampService: MampService(),
+    environmentService: EnvironmentService(),
     configService:
         ConfigService(runtimeService: runtimeService, paths: paths),
     processService: processService,
@@ -65,7 +65,7 @@ Future<void> main() async {
   final runtimeSetup =
       RuntimeSetupViewModel(installer: RuntimeInstaller(paths: paths));
 
-  runApp(FlutterMampApp(
+  runApp(OricDevServerApp(
     sitesViewModel: sitesViewModel,
     servicesViewModel: servicesViewModel,
     runtimeSetup: runtimeSetup,
@@ -77,8 +77,8 @@ Future<void> main() async {
   ));
 }
 
-class FlutterMampApp extends StatefulWidget {
-  const FlutterMampApp({
+class OricDevServerApp extends StatefulWidget {
+  const OricDevServerApp({
     super.key,
     required this.sitesViewModel,
     required this.servicesViewModel,
@@ -92,10 +92,10 @@ class FlutterMampApp extends StatefulWidget {
   final Future<void> Function() onExit;
 
   @override
-  State<FlutterMampApp> createState() => _FlutterMampAppState();
+  State<OricDevServerApp> createState() => _OricDevServerAppState();
 }
 
-class _FlutterMampAppState extends State<FlutterMampApp> {
+class _OricDevServerAppState extends State<OricDevServerApp> {
   late final AppLifecycleListener _lifecycle;
   final _navKey = GlobalKey<NavigatorState>();
 
@@ -128,7 +128,7 @@ class _FlutterMampAppState extends State<FlutterMampApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navKey,
-      title: 'OricMamp',
+      title: 'OricDevServer',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

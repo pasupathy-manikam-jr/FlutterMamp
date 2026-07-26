@@ -1,6 +1,6 @@
 import 'dart:io';
 
-/// Kills orphaned FlutterMamp-managed processes left over from a previous
+/// Kills orphaned OricDevServer-managed processes left over from a previous
 /// session (e.g. after a force-quit, where dispose never ran). Run once at
 /// startup so ports are free before we seed sites/services.
 ///
@@ -14,7 +14,7 @@ class ProcessCleanup {
     // php-fpm) live under ~/.fluttermamp/runtime.
     await _pkill('.fluttermamp/runtime');
     // Apache still uses MAMP's httpd but with our generated config path.
-    await _pkill('Application Support/FlutterMamp/conf/httpd-');
+    await _pkill('Application Support/OricDevServer/conf/httpd-');
   }
 
   Future<void> _pkill(String pattern) async {

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../../data/repositories/site_repository.dart';
-import '../../../../domain/models/mamp_environment.dart';
+import '../../../../domain/models/dev_environment.dart';
 import '../../../../domain/models/php_version.dart';
 import '../../../../domain/models/server_status.dart';
 import '../../../../domain/models/server_type.dart';
@@ -31,7 +31,7 @@ class SitesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  MampEnvironment get environment => _repository.environment;
+  DevEnvironment get environment => _repository.environment;
   List<Site> get sites => _repository.sites;
   List<PhpVersion> get phpVersions => environment.phpVersions;
 

@@ -2,9 +2,10 @@ import 'dart:io';
 
 /// Cross-platform application paths.
 ///
-/// macOS deliberately keeps its existing locations (`Application Support/
-/// FlutterMamp` and `~/.fluttermamp/runtime`) so current installs don't lose
-/// data. Linux and Windows use their platform conventions.
+/// macOS deliberately keeps its ORIGINAL hidden locations (`Application Support/
+/// FlutterMamp` and `~/.fluttermamp/runtime`) so existing installs don't lose
+/// their data/runtime on the rebrand. These are internal paths, never shown in
+/// UI. Linux and Windows are new installs, so they use the current name.
 ///
 /// Two roots:
 ///  - [supportDir] — mutable app data: sites.json, conf/, logs/, certs/,
@@ -27,23 +28,23 @@ class AppPaths {
   /// Mutable application data directory.
   String get supportDir {
     if (Platform.isMacOS) {
-      // Unchanged from earlier builds — do not migrate existing data.
+      // Keep the original folder name so existing data is not orphaned.
       return '$_home/Library/Application Support/FlutterMamp';
     }
     if (Platform.isWindows) {
       final appData = _env['APPDATA'] ?? '$_home\\AppData\\Roaming';
-      return '$appData\\OricMamp';
+      return '$appData\\OricDevServer';
     }
     // Linux / other Unix — XDG.
     final xdg = _env['XDG_DATA_HOME'] ?? '$_home/.local/share';
-    return '$xdg/OricMamp';
+    return '$xdg/OricDevServer';
   }
 
   /// Space-free directory holding our own binaries.
   String get runtimeDir {
     if (Platform.isWindows) {
       final local = _env['LOCALAPPDATA'] ?? '$_home\\AppData\\Local';
-      return '$local\\OricMamp\\runtime';
+      return '$local\\OricDevServer\\runtime';
     }
     // macOS keeps its existing location; Linux mirrors it.
     return '$_home/.fluttermamp/runtime';

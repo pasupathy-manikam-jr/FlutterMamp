@@ -15,7 +15,7 @@ class HostsService {
       : '/etc/hosts';
 
   // Kept as-is so existing macOS /etc/hosts entries stay recognised.
-  static const String _marker = '# FlutterMamp';
+  static const String _marker = '# OricDevServer';
 
   /// True if [hostname] already has one of our entries.
   Future<bool> isMapped(String hostname) async {

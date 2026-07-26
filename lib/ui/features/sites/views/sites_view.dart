@@ -73,7 +73,7 @@ class _Toolbar extends StatelessWidget {
           Image.asset('assets/images/oriclab_mark.png',
               width: 26, height: 26),
           const SizedBox(width: 10),
-          Text('OricMamp',
+          Text('OricDevServer',
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(width: 16),

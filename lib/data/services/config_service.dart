@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../domain/models/mamp_environment.dart';
+import '../../domain/models/dev_environment.dart';
 import '../../domain/models/server_type.dart';
 import '../../domain/models/site.dart';
 import '../platform/app_paths.dart';
@@ -87,7 +87,7 @@ class ConfigService {
   }
 
   /// System openssl keeps SSL cert generation MAMP-free (falls back to MAMP's).
-  String _opensslPath(MampEnvironment env) =>
+  String _opensslPath(DevEnvironment env) =>
       File('/usr/bin/openssl').existsSync()
           ? '/usr/bin/openssl'
           : (env.opensslBinary ?? '/usr/bin/openssl');
@@ -95,7 +95,7 @@ class ConfigService {
   /// Ensure the site's leaf cert exists and return the **CA** cert path — that
   /// is the certificate to trust in the keychain (trusting the CA covers every
   /// site signed by it).
-  Future<String?> ensureCert(Site site, MampEnvironment env) async {
+  Future<String?> ensureCert(Site site, DevEnvironment env) async {
     await _ensureDirs();
     await _certService.ensureCert(
       commonName: site.host,
@@ -105,7 +105,7 @@ class ConfigService {
     return _certService.caCertPath(certsDir);
   }
 
-  Future<SiteLaunch> prepare(Site site, MampEnvironment env) async {
+  Future<SiteLaunch> prepare(Site site, DevEnvironment env) async {
     await _ensureDirs();
     switch (site.server) {
       case ServerType.nginx:
@@ -116,7 +116,7 @@ class ConfigService {
   }
 
   Future<({String certPath, String keyPath})?> _cert(
-      Site site, MampEnvironment env) async {
+      Site site, DevEnvironment env) async {
     if (!site.sslEnabled) return null;
     return _certService.ensureCert(
       commonName: site.host,
@@ -127,7 +127,7 @@ class ConfigService {
 
   // --- Nginx (independent: our nginx + php-fpm) ----------------------------
 
-  Future<SiteLaunch> _nginxSteps(Site site, MampEnvironment env) async {
+  Future<SiteLaunch> _nginxSteps(Site site, DevEnvironment env) async {
     final nginx = _runtimeService.nginxBinary;
     final phpFpm = _runtimeService.phpFpmBinary;
     if (nginx == null || phpFpm == null) {
@@ -258,7 +258,7 @@ $sslListen
 
   // --- Apache (still MAMP: httpd + php-cgi) --------------------------------
 
-  Future<SiteLaunch> _apacheSteps(Site site, MampEnvironment env) async {
+  Future<SiteLaunch> _apacheSteps(Site site, DevEnvironment env) async {
     final httpd = env.apacheBinary;
     if (httpd == null) throw StateError('Apache binary not found in MAMP.');
 

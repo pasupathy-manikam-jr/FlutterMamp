@@ -79,7 +79,7 @@ class CertService {
       'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256',
       '-days', '3650',
       '-keyout', caKey, '-out', caCert,
-      '-subj', '/CN=FlutterMamp Local CA',
+      '-subj', '/CN=OricDevServer Local CA',
       '-addext', 'basicConstraints=critical,CA:TRUE',
       '-addext', 'keyUsage=critical,keyCertSign,cRLSign',
     ]);

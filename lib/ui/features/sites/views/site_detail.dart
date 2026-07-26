@@ -96,7 +96,7 @@ class _SiteDetailState extends State<SiteDetail> {
       builder: (_) => AlertDialog(
         title: Text('Delete "${widget.site.name}"?'),
         content: const Text(
-            'This removes the site from FlutterMamp. Your files are not touched.'),
+            'This removes the site from OricDevServer. Your files are not touched.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),

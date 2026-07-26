@@ -62,7 +62,7 @@ class RuntimeInstaller {
   final AppPaths _paths;
 
   static const String _base =
-      'https://github.com/pasupathy-manikam-jr/FlutterMamp/releases/download';
+      'https://github.com/pasupathy-manikam-jr/OricDevServer/releases/download';
   static const String _tag = 'runtime-v1';
 
   /// e.g. `macos-arm64`, `linux-x64`, `windows-x64`.

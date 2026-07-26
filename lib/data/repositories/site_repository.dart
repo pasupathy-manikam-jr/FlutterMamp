@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import '../../domain/models/mamp_environment.dart';
+import '../../domain/models/dev_environment.dart';
 import '../../domain/models/php_version.dart';
 import '../../domain/models/server_status.dart';
 import '../../domain/models/server_type.dart';
 import '../../domain/models/site.dart';
 import '../services/config_service.dart';
 import '../services/hosts_service.dart';
-import '../services/mamp_service.dart';
+import '../services/environment_service.dart';
 import '../services/server_process_service.dart';
 import '../services/settings_service.dart';
 import '../services/system_service.dart';
@@ -20,20 +20,20 @@ import '../services/system_service.dart';
 /// handler plus the web server.
 class SiteRepository {
   SiteRepository({
-    required MampService mampService,
+    required EnvironmentService environmentService,
     required ConfigService configService,
     required ServerProcessService processService,
     required SettingsService settingsService,
     required SystemService systemService,
     required HostsService hostsService,
-  })  : _mampService = mampService,
+  })  : _environmentService = environmentService,
         _configService = configService,
         _processService = processService,
         _settingsService = settingsService,
         _systemService = systemService,
         _hostsService = hostsService;
 
-  final MampService _mampService;
+  final EnvironmentService _environmentService;
   final ConfigService _configService;
   final ServerProcessService _processService;
   final SettingsService _settingsService;
@@ -45,8 +45,8 @@ class SiteRepository {
   final _changes = StreamController<void>.broadcast();
   Stream<void> get changes => _changes.stream;
 
-  MampEnvironment _environment = MampEnvironment.none;
-  MampEnvironment get environment => _environment;
+  DevEnvironment _environment = DevEnvironment.none;
+  DevEnvironment get environment => _environment;
 
   final List<Site> _sites = [];
   final Map<String, List<RunningProcess>> _processes = {};
@@ -62,7 +62,7 @@ class SiteRepository {
   }
 
   Future<void> initialize() async {
-    _environment = await _mampService.discover();
+    _environment = await _environmentService.discover();
 
     final loaded = await _settingsService.loadSites(_resolvePhp);
     _sites

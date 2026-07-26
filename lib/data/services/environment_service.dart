@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../domain/models/mamp_environment.dart';
+import '../../domain/models/dev_environment.dart';
 import '../../domain/models/php_version.dart';
 
 /// Discovers a local MAMP installation and its binaries.
@@ -8,8 +8,8 @@ import '../../domain/models/php_version.dart';
 /// Stateless service: it only reads the filesystem and returns clean domain
 /// models. All MAMP-specific path knowledge lives here so the rest of the app
 /// stays installation-agnostic.
-class MampService {
-  MampService({String? rootPath})
+class EnvironmentService {
+  EnvironmentService({String? rootPath})
       : rootPath = rootPath ?? _defaultRoot;
 
   static const String _defaultRoot = '/Applications/MAMP';
@@ -17,12 +17,12 @@ class MampService {
   /// MAMP application root to scan.
   final String rootPath;
 
-  /// Scan the installation and return an immutable [MampEnvironment].
+  /// Scan the installation and return an immutable [DevEnvironment].
   ///
-  /// Returns [MampEnvironment.none] when MAMP is not installed at [rootPath].
-  Future<MampEnvironment> discover() async {
+  /// Returns [DevEnvironment.none] when MAMP is not installed at [rootPath].
+  Future<DevEnvironment> discover() async {
     if (!Directory(rootPath).existsSync()) {
-      return MampEnvironment.none;
+      return DevEnvironment.none;
     }
 
     final apache = _firstExisting([
@@ -44,7 +44,7 @@ class MampService {
         ? '$rootPath/htdocs'
         : rootPath;
 
-    return MampEnvironment(
+    return DevEnvironment(
       rootPath: rootPath,
       apacheBinary: apache,
       nginxBinary: nginx,

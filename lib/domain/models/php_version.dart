@@ -1,6 +1,6 @@
 /// A PHP toolchain discovered inside the MAMP installation.
 ///
-/// Clean domain model — the [MampService] transforms raw filesystem paths into
+/// Clean domain model — the [EnvironmentService] transforms raw filesystem paths into
 /// these; the rest of the app never sees a raw path string.
 class PhpVersion implements Comparable<PhpVersion> {
   const PhpVersion({

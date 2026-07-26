@@ -2,10 +2,10 @@ import 'php_version.dart';
 
 /// A snapshot of the MAMP installation discovered on this machine.
 ///
-/// Produced by [MampService]; treated as an immutable single source of truth
+/// Produced by [EnvironmentService]; treated as an immutable single source of truth
 /// for "what binaries exist and where".
-class MampEnvironment {
-  const MampEnvironment({
+class DevEnvironment {
+  const DevEnvironment({
     required this.rootPath,
     required this.apacheBinary,
     required this.nginxBinary,
@@ -42,7 +42,7 @@ class MampEnvironment {
 
   /// An empty environment used before discovery completes or when MAMP is
   /// missing.
-  static const MampEnvironment none = MampEnvironment(
+  static const DevEnvironment none = DevEnvironment(
     rootPath: '',
     apacheBinary: null,
     nginxBinary: null,

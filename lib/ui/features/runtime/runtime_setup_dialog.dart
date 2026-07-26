@@ -26,7 +26,7 @@ class _RuntimeSetupDialog extends StatelessWidget {
       builder: (context, _) {
         final anyMissing = viewModel.hasMissing;
         return AlertDialog(
-          title: const Text('Set up OricMamp runtime'),
+          title: const Text('Set up OricDevServer runtime'),
           content: SizedBox(
             width: 460,
             child: Column(
@@ -44,7 +44,7 @@ class _RuntimeSetupDialog extends StatelessWidget {
                 for (final s in viewModel.states) _row(theme, s),
                 if (!anyMissing && !viewModel.isDownloading) ...[
                   const SizedBox(height: 8),
-                  Text('Tip: restart OricMamp after downloading so newly added '
+                  Text('Tip: restart OricDevServer after downloading so newly added '
                       'services activate.',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: theme.hintColor)),

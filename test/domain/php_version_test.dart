@@ -1,5 +1,5 @@
-import 'package:flutter_mamp/domain/models/php_version.dart';
-import 'package:flutter_mamp/domain/models/server_status.dart';
+import 'package:oric_dev_server/domain/models/php_version.dart';
+import 'package:oric_dev_server/domain/models/server_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

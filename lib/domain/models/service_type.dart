@@ -1,4 +1,4 @@
-/// Global background services FlutterMamp manages, independent of MAMP.
+/// Global background services OricDevServer manages, independent of MAMP.
 ///
 /// Binaries live in the app's own `runtime/bin` directory (bundled/downloaded),
 /// never `/Applications/MAMP`.

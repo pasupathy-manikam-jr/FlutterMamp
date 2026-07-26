@@ -3,7 +3,7 @@ import 'dart:io';
 import '../../domain/models/service_type.dart';
 import '../platform/app_paths.dart';
 
-/// Locates OricMamp's OWN bundled binaries.
+/// Locates OricDevServer's OWN bundled binaries.
 ///
 /// This is the independence boundary: binaries live under the app's runtime
 /// directory (downloaded/built), never `/Applications/MAMP`.
