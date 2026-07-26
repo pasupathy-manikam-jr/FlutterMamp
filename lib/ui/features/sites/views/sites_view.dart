@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../runtime/runtime_setup_dialog.dart';
+import '../../runtime/runtime_setup_view_model.dart';
 import '../../services/view_models/services_view_model.dart';
 import '../../services/views/services_section.dart';
 import '../../services/views/tools_section.dart';
@@ -16,10 +18,12 @@ class SitesView extends StatelessWidget {
     super.key,
     required this.viewModel,
     required this.servicesViewModel,
+    required this.runtimeSetup,
   });
 
   final SitesViewModel viewModel;
   final ServicesViewModel servicesViewModel;
+  final RuntimeSetupViewModel runtimeSetup;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +37,7 @@ class SitesView extends StatelessWidget {
         return Scaffold(
           body: Column(
             children: [
-              _Toolbar(viewModel: viewModel),
+              _Toolbar(viewModel: viewModel, runtimeSetup: runtimeSetup),
               const Divider(height: 1),
               Expanded(
                 child: Row(
@@ -55,14 +59,14 @@ class SitesView extends StatelessWidget {
 }
 
 class _Toolbar extends StatelessWidget {
-  const _Toolbar({required this.viewModel});
+  const _Toolbar({required this.viewModel, required this.runtimeSetup});
   final SitesViewModel viewModel;
+  final RuntimeSetupViewModel runtimeSetup;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final running = viewModel.anyRunning;
-    final env = viewModel.environment;
     final hasSites = viewModel.sites.isNotEmpty;
 
     return Container(
@@ -79,13 +83,8 @@ class _Toolbar extends StatelessWidget {
           const SizedBox(width: 16),
           _StatusLight(running: running, count: viewModel.runningCount),
           const Spacer(),
-          if (!env.isPresent)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Text('MAMP not found',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: const Color(0xFFFF3B30))),
-            ),
+          _RuntimeButton(runtimeSetup: runtimeSetup),
+          const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: hasSites ? viewModel.toggleAll : null,
             icon: Icon(running ? Icons.stop_rounded : Icons.play_arrow_rounded),
@@ -121,6 +120,36 @@ class _StatusLight extends StatelessWidget {
         Text(running ? '$count running' : 'All stopped',
             style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor)),
       ],
+    );
+  }
+}
+
+/// Toolbar button to open the runtime install/manage dialog at any time — so
+/// dismissing the first-launch prompt with "Later" is never a dead end.
+class _RuntimeButton extends StatelessWidget {
+  const _RuntimeButton({required this.runtimeSetup});
+  final RuntimeSetupViewModel runtimeSetup;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: runtimeSetup,
+      builder: (context, _) {
+        final missing =
+            runtimeSetup.states.where((s) => !s.installed).length;
+        return OutlinedButton.icon(
+          onPressed: () {
+            runtimeSetup.check();
+            showRuntimeSetupDialog(context, runtimeSetup);
+          },
+          icon: const Icon(Icons.cloud_download_outlined, size: 18),
+          label: Text(missing > 0 ? 'Runtime ($missing)' : 'Runtime'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: missing > 0 ? const Color(0xFFFF9500) : null,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          ),
+        );
+      },
     );
   }
 }

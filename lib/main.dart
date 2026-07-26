@@ -135,6 +135,7 @@ class _OricDevServerAppState extends State<OricDevServerApp> {
       home: SitesView(
         viewModel: widget.sitesViewModel,
         servicesViewModel: widget.servicesViewModel,
+        runtimeSetup: widget.runtimeSetup,
       ),
     );
   }

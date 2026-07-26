@@ -82,8 +82,25 @@ class _RuntimeSetupDialog extends StatelessWidget {
       trailing = Text('${(s.progress! * 100).round()}%',
           style: theme.textTheme.bodySmall);
     } else {
-      trailing = Text('~${s.component.approxMB} MB',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor));
+      // Missing: show size + a per-component install button so you can pick
+      // exactly what to download instead of "Download all".
+      trailing = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('~${s.component.approxMB} MB',
+              style:
+                  theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+          const SizedBox(width: 2),
+          IconButton(
+            tooltip: 'Install ${s.component.label}',
+            visualDensity: VisualDensity.compact,
+            iconSize: 18,
+            icon: const Icon(Icons.download),
+            onPressed:
+                viewModel.isDownloading ? null : () => viewModel.downloadOne(s),
+          ),
+        ],
+      );
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
