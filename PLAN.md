@@ -368,7 +368,17 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - [x] **Per-site php.ini editing**: PHP Configuration field on each site; applied
       to php-fpm via `-c` (nginx) and php-cgi via additive `-d` flags (Apache).
 
+### Branding & packaging
+- [x] **OricLab logo** in the top-left toolbar + as the **macOS app icon**
+      (cropped to the blue mark — `oriclab_mark.png` — since the source file had a
+      white wordmark + empty space that rendered near-invisible).
+- [x] **Standalone release app**: `flutter build macos --release` → `OricMamp.app`
+      installed to `/Applications` (launch from Finder/Launchpad, no IDE).
+- [x] Fixed RenderFlex overflow (detail pane scrolls on small windows).
+
 ### Open / next
+- [ ] Distributable build: code-sign + notarize, and **bundle the runtime** (or
+      download-on-first-launch) so the .app works on other Macs.
 - [ ] Nginx `client_max_body_size` knob (large uploads need it alongside php.ini).
 - [ ] Harden Trust Certificate button (verify trust status vs. osascript exit code).
 - [ ] Auto-start MySQL when opening phpMyAdmin/Adminer.
