@@ -89,6 +89,35 @@ pkg(){
       # drop debug symbols + static libs
       find "$STAGE/mysql" \( -name '*.pdb' -o -name '*.lib' \) -delete 2>/dev/null || true
       rm -rf "$STAGE/src"; upload mysql mysql ;;
+    php)
+      # Windows PHP has no php-fpm (POSIX-only); ship the CLI + php-cgi + ext.
+      # Sites serve via FrankenPHP; php.exe is for CLI/tools. Probe: bin/php.exe.
+      mkdir -p "$STAGE/bin" "$STAGE/src"
+      dl "$STAGE/src/php.zip" "https://downloads.php.net/~windows/releases/php-8.4.23-nts-Win32-vs17-x64.zip"
+      unzip -oq "$STAGE/src/php.zip" -d "$STAGE/src/php"
+      cp -R "$STAGE/src/php/"* "$STAGE/bin/"      # php.exe, php-cgi.exe, *.dll, ext/
+      rm -rf "$STAGE/src"; upload php bin ;;
+    nginx)
+      mkdir -p "$STAGE/src"
+      dl "$STAGE/src/n.zip" "https://nginx.org/download/nginx-1.27.4.zip"
+      unzip -oq "$STAGE/src/n.zip" -d "$STAGE/src"
+      local top; top="$(find "$STAGE/src" -maxdepth 1 -type d -name 'nginx-*' | head -1)"
+      mkdir -p "$STAGE/nginx/sbin" "$STAGE/nginx/logs" "$STAGE/nginx/temp"
+      cp "$top/nginx.exe" "$STAGE/nginx/sbin/nginx.exe"
+      cp -R "$top/conf" "$STAGE/nginx/conf"
+      cp -R "$top/html" "$STAGE/nginx/html" 2>/dev/null || true
+      rm -rf "$STAGE/src"; upload nginx nginx ;;
+    memcached)
+      # mingw port + its runtime DLLs (libevent, libressl, mingw runtime).
+      mkdir -p "$STAGE/bin" "$STAGE/src"
+      B="https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw_libressl"
+      dl "$STAGE/src/mc.zip" "$B/memcached-1.6.8-win64-mingw.zip"
+      dl "$STAGE/src/le.zip" "$B/libevent-2.1.12-stable-win64-mingw.zip"
+      dl "$STAGE/src/lr.zip" "$B/libressl-4.2.1-win64-mingw.zip"
+      for z in mc le lr; do unzip -oq "$STAGE/src/$z.zip" -d "$STAGE/src/$z"; done
+      cp "$(find "$STAGE/src/mc" -iname memcached.exe | head -1)" "$STAGE/bin/memcached.exe"
+      find "$STAGE/src" -iname '*.dll' -exec cp -n {} "$STAGE/bin/" \;
+      rm -rf "$STAGE/src"; upload memcached bin ;;
     *) echo "skip $1" ;;
   esac
 }

@@ -37,22 +37,22 @@ class RuntimeService {
   }
 
   // --- web-server binaries (for MAMP-free Sites) ---
-  String? _exists(String path) => File(path).existsSync() ? path : null;
 
   /// Our own Nginx binary, or null if not installed.
-  String? get nginxBinary => _exists('$root/nginx/sbin/nginx');
+  String? get nginxBinary => _bin('$root/nginx/sbin/nginx');
 
-  /// Our own php-fpm binary, or null if not installed.
-  String? get phpFpmBinary => _exists('$root/bin/php-fpm');
+  /// Our own php-fpm binary, or null if not installed. (None on Windows — PHP
+  /// there has no php-fpm SAPI; sites serve via FrankenPHP instead.)
+  String? get phpFpmBinary => _bin('$root/bin/php-fpm');
 
   /// Our own PHP CLI binary, or null if not installed.
-  String? get phpCliBinary => _exists('$root/bin/php');
+  String? get phpCliBinary => _bin('$root/bin/php');
 
   /// Our own MySQL client binary, or null if not installed.
-  String? get mysqlClient => _exists('$root/mysql/bin/mysql');
+  String? get mysqlClient => _bin('$root/mysql/bin/mysql');
 
   /// FrankenPHP binary (serves the bundled web tools; has mysqli), or null.
-  String? get frankenphpBinary => _exists('$root/bin/frankenphp');
+  String? get frankenphpBinary => _bin('$root/bin/frankenphp');
 
   /// Document root for a bundled tool (e.g. `adminer`), or null if missing.
   String? toolRoot(String dirName) {

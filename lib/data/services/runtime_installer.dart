@@ -5,13 +5,18 @@ import '../platform/app_paths.dart';
 /// A downloadable runtime component (a self-contained tar.gz that extracts into
 /// the runtime directory with the correct structure).
 class RuntimeComponent {
-  const RuntimeComponent(this.id, this.label, this.probePath, this.approxMB);
+  const RuntimeComponent(this.id, this.label, this.probePath, this.approxMB,
+      {this.windowsProbe});
 
   final String id;
   final String label;
 
   /// Path (relative to runtimeDir) whose existence means "installed".
   final String probePath;
+
+  /// Windows-specific probe, when the layout differs (e.g. PHP has no php-fpm
+  /// on Windows, so we probe the CLI instead). Falls back to [probePath].
+  final String? windowsProbe;
 
   /// Rough download size, for the UI.
   final int approxMB;
@@ -21,7 +26,8 @@ class RuntimeComponent {
 /// Releases as `<os>-<arch>-<id>.tar.gz` under the [RuntimeInstaller._tag] tag.
 class RuntimeManifest {
   static const List<RuntimeComponent> components = [
-    RuntimeComponent('php', 'PHP (php-fpm + CLI)', 'bin/php-fpm', 40),
+    RuntimeComponent('php', 'PHP (php-fpm + CLI)', 'bin/php-fpm', 40,
+        windowsProbe: 'bin/php'),
     RuntimeComponent('nginx', 'Nginx', 'nginx/sbin/nginx', 5),
     RuntimeComponent('mysql', 'MySQL', 'mysql/bin/mysqld', 520),
     RuntimeComponent('redis', 'Redis', 'bin/redis-server', 4),
@@ -87,7 +93,10 @@ class RuntimeInstaller {
       '$_base/$_tag/$platformKey-${c.id}.tar.gz';
 
   bool isInstalled(RuntimeComponent c) {
-    final p = '${_paths.runtimeDir}/${c.probePath}';
+    final probe = (Platform.isWindows && c.windowsProbe != null)
+        ? c.windowsProbe!
+        : c.probePath;
+    final p = '${_paths.runtimeDir}/$probe';
     return File(p).existsSync() ||
         (Platform.isWindows && File('$p.exe').existsSync());
   }
