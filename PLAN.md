@@ -387,9 +387,15 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
       extract into runtimeDir. **Proven end-to-end** (Redis asset, HTTP 200).
       Keeps the app ~40 MB.
 
+- [x] **Download-on-demand**: first-launch prompt (`RuntimeSetupViewModel` +
+      dialog) detects missing components and downloads them from GitHub Releases
+      with progress. Verified end-to-end (Redis download+extract from release).
+
 ### Phase 2/3 (to actually run on Linux/Windows)
-- [ ] Upload remaining macOS components + **source Linux/Windows binaries** to the
-      `runtime-v1` release (decide Windows Redis/Memcached: Memurai/port).
+- [ ] Upload the **full component set** to `runtime-v1` with **dependency
+      bundling** (memcached needs libevent; nginx needs libpcre2; php/frankenphp/
+      mysql are large) — currently only `macos-arm64-redis` is published.
+- [ ] **Source Linux/Windows binaries** (decide Windows Redis/Memcached: Memurai/port).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
       lazy per-service download.
 - [ ] **GitHub Actions CI** to build macOS + Windows + Linux artifacts.
