@@ -1,0 +1,86 @@
+name: Build Apache runtime (Linux + Windows)
+
+# Produces the last missing runtime component — Apache (httpd) — for Linux and
+# Windows, taking each platform to 9/9, and uploads to the runtime-v1 release.
+#   Linux:   apt's apache2 + modules, deps relocated via $ORIGIN rpath.
+#   Windows: Apache via Chocolatey (Apache Lounge build).
+# macOS Apache is already published (packaged from a workstation).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-apache:
+    runs-on: ubuntu-22.04
+    env:
+      TAG: runtime-v1
+    steps:
+      - name: Stage Linux Apache
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2 patchelf
+          O="$GITHUB_WORKSPACE/apache"
+          mkdir -p "$O/bin" "$O/modules" "$O/lib" "$O/conf" "$O/logs"
+          cp /usr/sbin/apache2 "$O/bin/httpd"
+          MD=/usr/lib/apache2/modules
+          # Exactly ONE MPM (event) — loading two MPMs makes httpd fail to start.
+          for m in mod_mpm_event mod_proxy mod_proxy_fcgi \
+                   mod_rewrite mod_ssl mod_mime mod_dir mod_unixd mod_authz_core \
+                   mod_authz_host mod_authn_core mod_log_config mod_socache_shmcb \
+                   mod_alias mod_env mod_setenvif mod_headers mod_filter; do
+            [ -f "$MD/$m.so" ] && cp "$MD/$m.so" "$O/modules/" || true
+          done
+          cp /etc/mime.types "$O/conf/mime.types" 2>/dev/null || true
+          # bundle the non-system shared libs httpd + modules need, then rpath
+          # them to $ORIGIN-relative so the tree runs on any distro.
+          bundle() {
+            for f in "$@"; do
+              ldd "$f" 2>/dev/null | awk '/=>/{print $3}' \
+                | grep -E 'libapr|libaprutil|libpcre|libssl|libcrypto|libexpat|libnghttp2|libjansson|libbrotli|liblua|libxml2|libgdbm|libcrypt|libldap|liblber|libsasl' \
+                | while read -r L; do [ -f "$L" ] && cp -n "$L" "$O/lib/" || true; done
+            done
+          }
+          bundle "$O/bin/httpd" "$O"/modules/*.so
+          # second pass: deps of the just-bundled libs
+          bundle "$O"/lib/*
+          patchelf --set-rpath '$ORIGIN/../lib' "$O/bin/httpd"
+          for so in "$O"/modules/*.so; do patchelf --set-rpath '$ORIGIN/../lib' "$so" 2>/dev/null || true; done
+          for l in "$O"/lib/*;        do patchelf --set-rpath '$ORIGIN'      "$l"  2>/dev/null || true; done
+          "$O/bin/httpd" -v || true
+          tar czf "$GITHUB_WORKSPACE/linux-x64-apache.tar.gz" -C "$GITHUB_WORKSPACE" apache
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" linux-x64-apache.tar.gz --clobber --repo "${{ github.repository }}"
+
+  windows-apache:
+    runs-on: windows-latest
+    env:
+      TAG: runtime-v1
+    steps:
+      - name: Stage Windows Apache (Chocolatey)
+        shell: pwsh
+        run: |
+          choco install apache-httpd -y --no-progress --ignore-checksums
+          $httpd = Get-ChildItem -Path C:\,$env:ChocolateyInstall -Recurse -Filter httpd.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $httpd) { throw "httpd.exe not found after choco install" }
+          $root = Split-Path (Split-Path $httpd.FullName)   # ...\Apache24
+          Write-Host "Apache root: $root"
+          New-Item -ItemType Directory -Force -Path stage\apache | Out-Null
+          Copy-Item "$root\bin"     stage\apache\bin     -Recurse
+          Copy-Item "$root\modules" stage\apache\modules -Recurse
+          Copy-Item "$root\conf"    stage\apache\conf    -Recurse -ErrorAction SilentlyContinue
+          foreach ($m in 'mod_proxy_fcgi','mod_ssl','mod_rewrite') {
+            if (-not (Test-Path "stage\apache\modules\$m.so")) { Write-Warning "missing $m.so" }
+          }
+          tar czf "$env:GITHUB_WORKSPACE\windows-x64-apache.tar.gz" -C stage apache
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" windows-x64-apache.tar.gz --clobber --repo "${{ github.repository }}"
