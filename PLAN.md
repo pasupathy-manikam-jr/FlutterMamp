@@ -343,3 +343,19 @@ lib/
       FrankenPHP + opens browser; phpMyAdmin auto-logs into our MySQL (root/root).
       Verified: both return HTTP 200 with their UIs.
 - [x] **Import SQL dump** view (📤 on the MySQL row) via bundled mysql client.
+      Hardened (max_allowed_packet=1G); imported cp4's real DB — **254 tables,
+      18M+ rows** (860 MB gzip) that phpMyAdmin's web upload couldn't handle.
+- [x] **Working SSL** via a local root CA (mkcert model): `CertService` makes a
+      CA:TRUE root + per-site leaf certs (SAN, serverAuth) signed by it. Trust the
+      CA once → every site's HTTPS is valid (verified `ssl_verify_result=0`, real
+      padlock). Fixed the earlier "can't trust a leaf as root" failure.
+- [x] **Copyable log panel** (SelectionArea + Copy button).
+- [x] Suppressed phpMyAdmin PHP 8.5 deprecation noise (tools php.ini via
+      PHP_INI_SCAN_DIR).
+- [x] **Renamed app FlutterMamp → OricMamp** (toolbar, window title, PRODUCT_NAME).
+
+### cp4 migration: COMPLETE
+cp4 runs entirely on OricMamp's own stack — Nginx/Apache + php-fpm + MySQL (full
+data) + Redis — with working trusted HTTPS. MAMP PRO no longer needed for it.
+Known false-positive: the Trust Certificate button can report "could not trust"
+even when the CA was trusted (osascript exit-code quirk) — harden later.
