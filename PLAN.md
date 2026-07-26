@@ -395,8 +395,9 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - [x] `scripts/package-runtime.sh` packages each component self-contained
       (bundles + relocates dylib deps to @loader_path) and uploads to `runtime-v1`.
       Published macos-arm64: redis, memcached, mailpit, nginx, php, tools
-      (verified portable). Run `scripts/package-runtime.sh frankenphp mysql` for
-      the two large ones.
+      (verified portable). All 8 macOS-arm64 components published (~162 MB total).
+      MySQL slimmed 636MB→183MB (51MB compressed): dropped mysqld-debug, mecab,
+      static libs, unused tools; verified boots.
 - [ ] **Source Linux/Windows binaries** (decide Windows Redis/Memcached: Memurai/port).
 - [ ] In-app **"Install runtime" UI** (progress) wired to `RuntimeInstaller`;
       lazy per-service download.
