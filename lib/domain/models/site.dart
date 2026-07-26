@@ -18,6 +18,7 @@ class Site {
     this.hostname = '',
     this.sslEnabled = false,
     this.sslPort = 8443,
+    this.phpIni = '',
     this.phpVersion,
     this.status = ServerStatus.stopped,
     this.pid,
@@ -45,6 +46,10 @@ class Site {
   /// HTTPS port used when [sslEnabled].
   final int sslPort;
 
+  /// Raw php.ini directives applied to this site's PHP (php-fpm/php-cgi via -c).
+  /// One `key = value` per line.
+  final String phpIni;
+
   /// Selected PHP toolchain, executed via FastCGI.
   final PhpVersion? phpVersion;
 
@@ -69,6 +74,7 @@ class Site {
     String? hostname,
     bool? sslEnabled,
     int? sslPort,
+    String? phpIni,
     PhpVersion? phpVersion,
     ServerStatus? status,
     int? pid,
@@ -86,6 +92,7 @@ class Site {
       hostname: hostname ?? this.hostname,
       sslEnabled: sslEnabled ?? this.sslEnabled,
       sslPort: sslPort ?? this.sslPort,
+      phpIni: phpIni ?? this.phpIni,
       phpVersion: phpVersion ?? this.phpVersion,
       status: status ?? this.status,
       pid: clearPid ? null : (pid ?? this.pid),
@@ -103,6 +110,7 @@ class Site {
         'hostname': hostname,
         'sslEnabled': sslEnabled,
         'sslPort': sslPort,
+        if (phpIni.isNotEmpty) 'phpIni': phpIni,
         if (phpVersion != null) 'phpBinaryPath': phpVersion!.binaryPath,
       };
 
@@ -133,6 +141,7 @@ class Site {
       hostname: json['hostname'] as String? ?? '',
       sslEnabled: json['sslEnabled'] as bool? ?? false,
       sslPort: json['sslPort'] as int? ?? 8443,
+      phpIni: json['phpIni'] as String? ?? '',
       phpVersion: resolvePhp(json['phpBinaryPath'] as String?),
     );
   }

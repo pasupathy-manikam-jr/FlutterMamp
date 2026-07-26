@@ -114,6 +114,7 @@ class SiteRepository {
     String hostname = '',
     bool sslEnabled = false,
     int sslPort = 8443,
+    String phpIni = '',
     PhpVersion? phpVersion,
   }) async {
     final id = _newId();
@@ -126,6 +127,7 @@ class SiteRepository {
       hostname: hostname,
       sslEnabled: sslEnabled,
       sslPort: sslPort,
+      phpIni: phpIni,
       phpVersion: phpVersion ?? _environment.defaultPhp,
     ));
     await _persist();
@@ -142,6 +144,7 @@ class SiteRepository {
     String? hostname,
     bool? sslEnabled,
     int? sslPort,
+    String? phpIni,
     PhpVersion? phpVersion,
   }) async {
     final current = site(id);
@@ -154,6 +157,7 @@ class SiteRepository {
       hostname: hostname,
       sslEnabled: sslEnabled,
       sslPort: sslPort,
+      phpIni: phpIni,
       phpVersion: phpVersion,
     ));
     await _persist();

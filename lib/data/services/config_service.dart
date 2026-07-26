@@ -61,6 +61,32 @@ class ConfigService {
 
   int _fcgiPort(Site site) => 40000 + (site.port % 20000);
 
+  /// Write the site's php.ini overrides to a file and return its path.
+  Future<String> _writePhpIni(Site site) async {
+    final path = '$confDir/php-${site.id}.ini';
+    await File(path).writeAsString(site.phpIni);
+    return path;
+  }
+
+  /// Parse php.ini directives into additive `-d key=value` flags (used for
+  /// php-cgi, so we don't replace MAMP's default php.ini).
+  List<String> _phpDFlags(String phpIni) {
+    final flags = <String>[];
+    for (final raw in phpIni.split('\n')) {
+      final line = raw.trim();
+      if (line.isEmpty || line.startsWith(';') || line.startsWith('#')) {
+        continue;
+      }
+      final eq = line.indexOf('=');
+      if (eq <= 0) continue;
+      final key = line.substring(0, eq).trim();
+      final value = line.substring(eq + 1).trim();
+      flags.add('-d');
+      flags.add('$key=$value');
+    }
+    return flags;
+  }
+
   /// System openssl keeps SSL cert generation MAMP-free (falls back to MAMP's).
   String _opensslPath(MampEnvironment env) =>
       File('/usr/bin/openssl').existsSync()
@@ -125,9 +151,14 @@ pm.start_servers = 1
 pm.min_spare_servers = 1
 pm.max_spare_servers = 3
 ''');
+    // Our static php-fpm has extensions compiled in, so loading the site's
+    // php.ini via -c is safe (empty → built-in defaults, so we keep -n).
+    final ini = site.phpIni.trim();
     final phpFpmSpec = LaunchSpec(
       executable: phpFpm,
-      arguments: ['-F', '-n', '-y', fpmConf],
+      arguments: ini.isEmpty
+          ? ['-F', '-n', '-y', fpmConf]
+          : ['-F', '-y', fpmConf, '-c', await _writePhpIni(site)],
     );
 
     // nginx.
@@ -215,7 +246,11 @@ $sslListen
     if (cgi != null) {
       steps.add(LaunchSpec(
         executable: cgi,
-        arguments: ['-b', '127.0.0.1:${_fcgiPort(site)}'],
+        // Additive -d flags preserve MAMP's default php.ini (extensions etc.).
+        arguments: [
+          '-b', '127.0.0.1:${_fcgiPort(site)}',
+          ..._phpDFlags(site.phpIni),
+        ],
         workingDirectory: site.documentRoot,
         environment: const {
           'PHP_FCGI_CHILDREN': '4',

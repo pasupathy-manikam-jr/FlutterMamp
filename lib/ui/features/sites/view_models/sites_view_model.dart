@@ -68,6 +68,7 @@ class SitesViewModel extends ChangeNotifier {
     String hostname = '',
     bool sslEnabled = false,
     int sslPort = 8443,
+    String phpIni = '',
     PhpVersion? phpVersion,
   }) async {
     final id = await _repository.addSite(
@@ -78,6 +79,7 @@ class SitesViewModel extends ChangeNotifier {
       hostname: hostname,
       sslEnabled: sslEnabled,
       sslPort: sslPort,
+      phpIni: phpIni,
       phpVersion: phpVersion,
     );
     _selectedId = id;
@@ -93,6 +95,7 @@ class SitesViewModel extends ChangeNotifier {
     String? hostname,
     bool? sslEnabled,
     int? sslPort,
+    String? phpIni,
     PhpVersion? phpVersion,
   }) =>
       _repository.updateSite(
@@ -104,6 +107,7 @@ class SitesViewModel extends ChangeNotifier {
         hostname: hostname,
         sslEnabled: sslEnabled,
         sslPort: sslPort,
+        phpIni: phpIni,
         phpVersion: phpVersion,
       );
 

@@ -25,6 +25,7 @@ class _SiteDetailState extends State<SiteDetail> {
   late final TextEditingController _port;
   late final TextEditingController _hostname;
   late final TextEditingController _sslPort;
+  late final TextEditingController _phpIni;
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _SiteDetailState extends State<SiteDetail> {
     _port = TextEditingController(text: widget.site.port.toString());
     _hostname = TextEditingController(text: widget.site.hostname);
     _sslPort = TextEditingController(text: widget.site.sslPort.toString());
+    _phpIni = TextEditingController(text: widget.site.phpIni);
   }
 
   @override
@@ -43,6 +45,7 @@ class _SiteDetailState extends State<SiteDetail> {
       _port.text = widget.site.port.toString();
       _hostname.text = widget.site.hostname;
       _sslPort.text = widget.site.sslPort.toString();
+      _phpIni.text = widget.site.phpIni;
     }
   }
 
@@ -52,6 +55,7 @@ class _SiteDetailState extends State<SiteDetail> {
     _port.dispose();
     _hostname.dispose();
     _sslPort.dispose();
+    _phpIni.dispose();
     super.dispose();
   }
 
@@ -64,6 +68,7 @@ class _SiteDetailState extends State<SiteDetail> {
       port: int.tryParse(_port.text.trim()),
       hostname: _hostname.text.trim(),
       sslPort: int.tryParse(_sslPort.text.trim()),
+      phpIni: _phpIni.text,
     );
   }
 
@@ -239,6 +244,21 @@ class _SiteDetailState extends State<SiteDetail> {
                 ),
               ],
             ],
+          ),
+          const SizedBox(height: 12),
+          _label('PHP Configuration (php.ini)'),
+          TextField(
+            controller: _phpIni,
+            enabled: editable,
+            minLines: 3,
+            maxLines: 6,
+            style: const TextStyle(fontFamily: 'Menlo', fontSize: 12),
+            decoration: _dec().copyWith(
+              hintText: 'upload_max_filesize = 64M\n'
+                  'post_max_size = 64M\n'
+                  'memory_limit = 512M',
+            ),
+            onChanged: (_) => _commit(),
           ),
           if (site.sslEnabled)
             Align(
