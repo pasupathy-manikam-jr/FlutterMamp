@@ -93,6 +93,8 @@ class ConfigService {
         return _nginxSteps(site, env);
       case ServerType.apache:
         return _apacheSteps(site, env);
+      case ServerType.frankenphp:
+        return _frankenPhpSteps(site, env);
     }
   }
 
@@ -114,7 +116,7 @@ class ConfigService {
     if (nginx == null || phpFpm == null) {
       // No bundled nginx (e.g. Linux, where nginx needs a CI build): serve via
       // FrankenPHP, which embeds its own PHP — a single cross-platform binary.
-      return _frankenPhpSteps(site);
+      return _frankenPhpSteps(site, env);
     }
 
     final fcgi = _fcgiPort(site);
@@ -194,22 +196,83 @@ $sslListen
     return SiteLaunch([phpFpmSpec, nginxSpec]);
   }
 
-  // --- FrankenPHP (single binary, embedded PHP) — cross-platform fallback -----
-  Future<SiteLaunch> _frankenPhpSteps(Site site) async {
+  // --- FrankenPHP (single binary, embedded PHP) -------------------------------
+  //
+  // Two roles: the engine a site can pick directly (ServerType.frankenphp), and
+  // the fallback when nginx/Apache + php-fpm aren't bundled (Windows, Linux).
+  //
+  // Uses a rendered Caddyfile rather than `php-server`, because php-server can
+  // only do plain HTTP. Dropping a site from HTTPS to HTTP on the same hostname
+  // breaks logins: cookies the browser stored as `Secure` are neither sent to
+  // nor overwritable by an insecure origin (RFC 6265bis "Leave Secure Cookies
+  // Alone"), so the session silently restarts every request and Laravel-style
+  // CSRF checks fail with 419. Serving TLS keeps the cookie jar intact.
+  //
+  // Still no worker mode — that stays PLAN.md M2.
+  Future<SiteLaunch> _frankenPhpSteps(Site site, DevEnvironment env) async {
     final fp = _runtimeService.frankenphpBinary;
     if (fp == null) {
-      throw StateError(
-          'No web server installed (need Nginx+php-fpm or FrankenPHP).');
+      throw StateError('FrankenPHP is not installed — install it from the '
+          'Runtime panel (or pick Nginx/Apache instead).');
     }
+
+    final cert = await _cert(site, env);
+    final prefix = '$baseDir/frankenphp/${site.id}';
+    await Directory(prefix).create(recursive: true);
+
+    // Site addresses omit the host so any Host header matches — the site may be
+    // reached as either 127.0.0.1 or its custom hostname, and unlike nginx we
+    // have no separate default vhost to fall back to. `bind` is then required:
+    // a host-less address otherwise listens on every interface, which would put
+    // the site on the LAN (nginx/Apache here listen on 127.0.0.1 only).
+    //
+    // `tls` is explicit because Caddy's automatic HTTPS would otherwise mint a
+    // cert from *its* internal CA, which the keychain doesn't trust; ours is
+    // signed by the CA the Trust Certificate button installs. `auto_https off`
+    // also stops Caddy grabbing port 80 for redirects.
+    final httpsSite = cert != null
+        ? '''
+
+https://:${site.sslPort} {
+	bind 127.0.0.1
+	tls "${cert.certPath}" "${cert.keyPath}"
+	root * "${site.documentRoot}"
+	encode zstd br gzip
+	php_server
+}'''
+        : '';
+
+    final confPath = '$confDir/frankenphp-${site.id}.caddy';
+    await File(confPath).writeAsString('''
+{
+	frankenphp
+	order php_server before file_server
+	auto_https off
+	admin off
+	log {
+		output file "$logDir/frankenphp-${site.id}.log"
+	}
+}
+
+http://:${site.port} {
+	bind 127.0.0.1
+	root * "${site.documentRoot}"
+	encode zstd br gzip
+	php_server
+}$httpsSite
+''');
+
     return SiteLaunch([
       LaunchSpec(
         executable: fp,
-        arguments: [
-          'php-server',
-          '-r', site.documentRoot,
-          '-l', '127.0.0.1:${site.port}',
-        ],
+        arguments: ['run', '--config', confPath, '--adapter', 'caddyfile'],
         workingDirectory: site.documentRoot,
+        // Keep Caddy's own state (its internal CA, OCSP cache) inside the
+        // site's dir instead of the user's ~/Library/Application Support/Caddy.
+        environment: {
+          'XDG_CONFIG_HOME': prefix,
+          'XDG_DATA_HOME': prefix,
+        },
       ),
     ]);
   }
@@ -248,7 +311,7 @@ pm.max_spare_servers = 3
     final serverRoot = _runtimeService.apacheRoot;
     if (httpd == null || phpFpm == null || serverRoot == null) {
       // No bundled Apache/php-fpm yet: serve via FrankenPHP so the site works.
-      return _frankenPhpSteps(site);
+      return _frankenPhpSteps(site, env);
     }
     final modules = '$serverRoot/modules';
     final cert = await _cert(site, env);

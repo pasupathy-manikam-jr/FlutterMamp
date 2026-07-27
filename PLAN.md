@@ -450,3 +450,24 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
 - macOS: macos-arm64-apache.tar.gz published (relocated + ad-hoc re-signed,
   verified standalone). 9/9 on macOS.
 - TODO: Windows Apache (Apache Lounge courier) + Linux Apache (CI build).
+
+## FrankenPHP as a selectable engine + benchmark (2026-07-27)
+- `ServerType.frankenphp` added: sites can now pick FrankenPHP directly, not only
+  as the fallback when nginx/Apache + php-fpm aren't bundled.
+- `_frankenPhpSteps` now renders a **Caddyfile** instead of `php-server`, so it
+  serves HTTPS on our own CA's cert (php-server is HTTP-only, and dropping a
+  hostname from HTTPS to HTTP breaks `Secure` session cookies → Laravel 419).
+  `auto_https off` + explicit `tls` + `bind 127.0.0.1`; Caddy state kept in
+  `~/.fluttermamp/frankenphp/<site>` via XDG_*_HOME.
+- `ServerType` gained `supportsSsl` / `usesSitePhpVersion` capability flags;
+  `Site.sslActive` = stored preference AND engine capability. UI (site detail +
+  new-site dialog) greys out the SSL toggle and labels the PHP dropdown
+  "ignored" for engines with compiled-in PHP.
+- **BENCHMARK.md**: Apache 2.4.66 vs Nginx 1.27.4 vs FrankenPHP 1.12.6 on a real
+  Laravel 13 + Inertia app. All three equivalent on application work; FrankenPHP's
+  reputation for speed comes from compression + HTTP/2 defaults, not architecture.
+  Worker mode (the actual FrankenPHP advantage) still unmeasured → M2.
+- build-app.yml: asset names rebranded OricMamp → OricDevServer, macOS packaging
+  globs `*.app` instead of hardcoding the bundle name.
+- Still M2: FrankenPHP **worker mode**; per-site PHP version has no effect on any
+  engine yet (all run bundled php-fpm 8.4.8 / embedded 8.5.8).

@@ -74,7 +74,9 @@ class _SiteFormDialogState extends State<_SiteFormDialog> {
       setState(() => _error = 'Enter a valid port (1–65535).');
       return;
     }
-    if (_ssl && (sslPort == null || sslPort < 1 || sslPort > 65535)) {
+    if (_ssl &&
+        _server.supportsSsl &&
+        (sslPort == null || sslPort < 1 || sslPort > 65535)) {
       setState(() => _error = 'Enter a valid SSL port (1–65535).');
       return;
     }
@@ -203,11 +205,15 @@ class _SiteFormDialogState extends State<_SiteFormDialog> {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Enable SSL (HTTPS)'),
-                subtitle: const Text('Self-signed certificate via OpenSSL'),
-                value: _ssl,
-                onChanged: (v) => setState(() => _ssl = v),
+                subtitle: Text(_server.supportsSsl
+                    ? 'Self-signed certificate via OpenSSL'
+                    : '${_server.label} serves HTTP only'),
+                value: _ssl && _server.supportsSsl,
+                onChanged: _server.supportsSsl
+                    ? (v) => setState(() => _ssl = v)
+                    : null,
               ),
-              if (_ssl) ...[
+              if (_ssl && _server.supportsSsl) ...[
                 _label('SSL Port'),
                 TextField(
                     controller: _sslPort,

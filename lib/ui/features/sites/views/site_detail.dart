@@ -216,14 +216,16 @@ class _SiteDetailState extends State<SiteDetail> {
                 child: SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('SSL (HTTPS)'),
-                  subtitle: const Text('Self-signed certificate'),
-                  value: site.sslEnabled,
-                  onChanged: editable
+                  subtitle: Text(site.server.supportsSsl
+                      ? 'Self-signed certificate'
+                      : '${site.server.label} serves HTTP only'),
+                  value: site.sslActive,
+                  onChanged: editable && site.server.supportsSsl
                       ? (v) => vm.updateSite(site.id, sslEnabled: v)
                       : null,
                 ),
               ),
-              if (site.sslEnabled) ...[
+              if (site.sslActive) ...[
                 const SizedBox(width: 12),
                 SizedBox(
                   width: 120,
@@ -261,7 +263,7 @@ class _SiteDetailState extends State<SiteDetail> {
             ),
             onChanged: (_) => _commit(),
           ),
-          if (site.sslEnabled)
+          if (site.sslActive)
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
@@ -378,10 +380,15 @@ class _SiteDetailState extends State<SiteDetail> {
   }
 
   Widget _phpSelector(Site site, bool editable) {
+    // FrankenPHP's PHP is compiled into the binary, so the per-site choice has
+    // no effect there — say so rather than showing a control that does nothing.
+    final honoured = site.server.usesSitePhpVersion;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label('PHP Version'),
+        _label(honoured
+            ? 'PHP Version'
+            : 'PHP Version (ignored — ${site.server.label} has its own)'),
         DropdownButtonFormField<PhpVersion>(
           initialValue: site.phpVersion,
           isExpanded: true,
@@ -390,7 +397,7 @@ class _SiteDetailState extends State<SiteDetail> {
             for (final v in vm.phpVersions)
               DropdownMenuItem(value: v, child: Text(v.version)),
           ],
-          onChanged: editable
+          onChanged: editable && honoured
               ? (v) {
                   if (v != null) vm.updateSite(site.id, phpVersion: v);
                 }

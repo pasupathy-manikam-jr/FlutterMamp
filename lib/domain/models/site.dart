@@ -62,9 +62,15 @@ class Site {
   /// Host used in the URL — the custom hostname if set, else loopback.
   String get host => hostname.isNotEmpty ? hostname : '127.0.0.1';
 
+  /// Whether HTTPS is really being served: the user asked for it *and* the
+  /// engine can do it. [sslEnabled] alone is the stored preference — engines
+  /// like FrankenPHP ignore it, so anything that builds a URL or offers cert
+  /// actions must consult this instead.
+  bool get sslActive => sslEnabled && server.supportsSsl;
+
   /// The primary URL to open in a browser.
   String get url =>
-      sslEnabled ? 'https://$host:$sslPort' : 'http://$host:$port';
+      sslActive ? 'https://$host:$sslPort' : 'http://$host:$port';
 
   Site copyWith({
     String? name,
