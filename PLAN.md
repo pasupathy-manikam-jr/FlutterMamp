@@ -468,6 +468,9 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
   reputation for speed comes from compression + HTTP/2 defaults, not architecture.
   Worker mode (the actual FrankenPHP advantage) still unmeasured → M2.
 - build-app.yml: asset names rebranded OricMamp → OricDevServer, macOS packaging
-  globs `*.app` instead of hardcoding the bundle name.
+  globs `*.app` instead of hardcoding the bundle name. **Edited locally but NOT
+  pushed** — token still lacks `workflow` scope. Until it's pasted via
+  github.com, the macOS leg of every app build FAILS: the remote workflow ditto's
+  `Release/OricMamp.app` while AppInfo.xcconfig now builds `OricDevServer.app`.
 - Still M2: FrankenPHP **worker mode**; per-site PHP version has no effect on any
   engine yet (all run bundled php-fpm 8.4.8 / embedded 8.5.8).
