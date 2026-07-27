@@ -467,10 +467,11 @@ even when the CA was trusted (osascript exit-code quirk) — harden later.
   Laravel 13 + Inertia app. All three equivalent on application work; FrankenPHP's
   reputation for speed comes from compression + HTTP/2 defaults, not architecture.
   Worker mode (the actual FrankenPHP advantage) still unmeasured → M2.
-- build-app.yml: asset names rebranded OricMamp → OricDevServer, macOS packaging
-  globs `*.app` instead of hardcoding the bundle name. **Edited locally but NOT
-  pushed** — token still lacks `workflow` scope. Until it's pasted via
-  github.com, the macOS leg of every app build FAILS: the remote workflow ditto's
-  `Release/OricMamp.app` while AppInfo.xcconfig now builds `OricDevServer.app`.
+- build-app.yml: asset names rebranded, and macOS packaging now globs `*.app`
+  instead of hardcoding the bundle name (the hardcoded old name was failing every
+  macOS build). Pasted via github.com — the push token still lacks `workflow`
+  scope, so any future workflow edit needs the same detour or a scope grant.
+- Release `app-v1` and the packaging scripts carry OricDevServer names only; the
+  pre-rebrand assets were deleted. `~/.fluttermamp` data paths stay as-is.
 - Still M2: FrankenPHP **worker mode**; per-site PHP version has no effect on any
   engine yet (all run bundled php-fpm 8.4.8 / embedded 8.5.8).

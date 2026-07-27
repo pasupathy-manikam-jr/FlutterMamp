@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Package the local OricMamp runtime binaries into per-component, self-contained
+# Package the local OricDevServer runtime binaries into per-component, self-contained
 # tarballs and upload them to the GitHub `runtime-v1` release so the app can
 # download them on demand.
 #
@@ -14,10 +14,10 @@
 # dylib into the archive — so binaries work under a different $HOME/username.
 set -euo pipefail
 
-RUNTIME="${ORICMAMP_RUNTIME:-$HOME/.fluttermamp/runtime}"
-STAGE="$(mktemp -d /tmp/oricmamp-pkg.XXXXXX)"
-OUT="$(mktemp -d /tmp/oricmamp-out.XXXXXX)"
-REPO="pasupathy-manikam-jr/FlutterMamp"
+RUNTIME="${ORICDEVSERVER_RUNTIME:-$HOME/.fluttermamp/runtime}"
+STAGE="$(mktemp -d /tmp/oricdevserver-pkg.XXXXXX)"
+OUT="$(mktemp -d /tmp/oricdevserver-out.XXXXXX)"
+REPO="pasupathy-manikam-jr/OricDevServer"
 TAG="runtime-v1"
 
 case "$(uname -m)" in
@@ -41,7 +41,7 @@ if [ -z "${REL_ID:-}" ]; then
   log "Creating release $TAG"
   REL_ID="$(curl -s -H "Authorization: token $TOKEN" -X POST \
     "https://api.github.com/repos/$REPO/releases" \
-    -d "{\"tag_name\":\"$TAG\",\"name\":\"OricMamp runtime v1\",\"prerelease\":true}" \
+    -d "{\"tag_name\":\"$TAG\",\"name\":\"OricDevServer runtime v1\",\"prerelease\":true}" \
     | grep -o '"id": [0-9]*' | head -1 | grep -o '[0-9]*')"
 fi
 log "Release id: $REL_ID  platform: $PLATFORM"

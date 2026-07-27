@@ -8,13 +8,13 @@
 # Usage: scripts/package-runtime-linux.sh [component ...]   (default: all here)
 set -euo pipefail
 
-ARCH="${ORICMAMP_ARCH:-x86_64}"       # static-php uses x86_64
+ARCH="${ORICDEVSERVER_ARCH:-x86_64}"       # static-php uses x86_64
 PLATFORM="linux-x64"
-REPO="pasupathy-manikam-jr/FlutterMamp"
+REPO="pasupathy-manikam-jr/OricDevServer"
 TAG="runtime-v1"
-RT="${ORICMAMP_RUNTIME:-$HOME/.fluttermamp/runtime}"   # for platform-independent 'tools'
-STAGE="$(mktemp -d /tmp/oricmamp-lx.XXXXXX)"
-OUT="$(mktemp -d /tmp/oricmamp-lxout.XXXXXX)"
+RT="${ORICDEVSERVER_RUNTIME:-$HOME/.fluttermamp/runtime}"   # for platform-independent 'tools'
+STAGE="$(mktemp -d /tmp/oricdevserver-lx.XXXXXX)"
+OUT="$(mktemp -d /tmp/oricdevserver-lxout.XXXXXX)"
 trap 'rm -rf "$STAGE" "$OUT"' EXIT
 log(){ printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 
